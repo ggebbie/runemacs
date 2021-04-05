@@ -175,7 +175,8 @@
       '((default "julia")                  ; having trouble finding it for some reason.
         (master "/opt/julia-1.6.0/bin/julia"))) ; give some help
 
-(use-package matlab-mode) ; error cannot load matlab-load
+;; Error (use-package): Cannot load matlab-mode
+(use-package matlab-mode)
 ;;(require 'matlab-mode)
 ;;(require 'matlab-load)
 
@@ -209,21 +210,3 @@
   :commands magit-status)
 ;  :custom
 ;  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
-
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(custom-safe-themes
-   '("c83c095dd01cde64b631fb0fe5980587deec3834dc55144a6e78ff91ebc80b19" "aaa4c36ce00e572784d424554dcc9641c82d1155370770e231e10c649b59a074" default))
- '(global-tab-line-mode t)
- '(package-selected-packages
-   '(evil general all-the-icons-dired doom-themes helpful ivy-rich which-key rainbow-delimiters julia-mode doom-modeline counsel ivy command-log-mode use-package no-littering auto-package-update))
- '(which-key-mode t))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
