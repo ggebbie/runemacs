@@ -165,31 +165,6 @@
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
 
-(use-package julia-mode)
-
-(use-package julia-repl)
-(add-hook 'julia-mode-hook 'julia-repl-mode) ;; always use minor mode
-
-;; problem with flatpak, may not be necessary now
-(setq julia-repl-executable-records
-      '((default "julia")                  ; having trouble finding it for some reason.
-        (master "/opt/julia-1.6.0/bin/julia"))) ; give some help
-
-;; Error (use-package): Cannot load matlab-mode
-(use-package matlab-mode)
-;;(require 'matlab-mode)
-;;(require 'matlab-load)
-
-(setq matlab-indent-function-body t)  ; if you want function bodies indented
- (setq matlab-verify-on-save-flag nil) ; turn off auto-verify on save
- (defun my-matlab-mode-hook ()
-     (setq fill-column 76))              ; where auto-fill should wrap
- (add-hook 'matlab-mode-hook 'my-matlab-mode-hook)
-
- (defun my-matlab-shell-mode-hook ()
-   '())
- (add-hook 'matlab-shell-mode-hook 'my-matlab-shell-mode-hook)
-
 (use-package projectile
   :diminish projectile-mode
   :config (projectile-mode)
@@ -209,4 +184,31 @@
 (use-package magit
   :commands magit-status)
 ;  :custom
-;  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
+					;  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
+
+
+(use-package julia-mode)
+
+(use-package julia-repl)
+(add-hook 'julia-mode-hook 'julia-repl-mode) ;; always use minor mode
+
+;; problem with flatpak, may not be necessary now
+(setq julia-repl-executable-records
+      '((default "julia")                  ; having trouble finding it for some reason.
+        (master "/opt/julia-1.6.0/bin/julia"))) ; give some help
+
+;; Error (use-package): Cannot load matlab-mode
+(use-package matlab-mode)
+(require 'matlab-mode)
+(require 'matlab-load)
+
+(setq matlab-indent-function-body t)  ; if you want function bodies indented
+ (setq matlab-verify-on-save-flag nil) ; turn off auto-verify on save
+ (defun my-matlab-mode-hook ()
+     (setq fill-column 76))              ; where auto-fill should wrap
+ (add-hook 'matlab-mode-hook 'my-matlab-mode-hook)
+
+ (defun my-matlab-shell-mode-hook ()
+   '())
+ (add-hook 'matlab-shell-mode-hook 'my-matlab-shell-mode-hook)
+
