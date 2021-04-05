@@ -15,10 +15,10 @@
 (defvar efs/default-font-size 120)
 (defvar efs/default-variable-font-size 130)
 
-(set-face-attribute 'default nil :font "Fira Code Retina" :height efs/default-font-size)
+;(set-face-attribute 'default nil :font "Fira Code Retina" :height efs/default-font-size)
 
 ;; Set the fixed pitch face
-(set-face-attribute 'fixed-pitch nil :font "Fira Code Retina" :height efs/default-font-size)
+;(set-face-attribute 'fixed-pitch nil :font "Fira Code Retina" :height efs/default-font-size)
 
 ;; Set the variable pitch face
 ;;(set-face-attribute 'variable-pitch nil :font "Cantarell" :height efs/default-variable-font-size :weight 'regular)
@@ -69,6 +69,15 @@
   (which-key-mode)
   (setq which-key-idle-delay 1))
 
+(use-package counsel
+  :bind (("C-M-j" . 'counsel-switch-buffer)
+         :map minibuffer-local-map
+         ("C-r" . 'counsel-minibuffer-history))
+  :custom
+  (counsel-linux-app-format-function #'counsel-linux-app-format-function-name-only)
+  :config
+  (counsel-mode 1))
+
 (use-package ivy
   :diminish
   :bind (("C-s" . swiper)
@@ -91,15 +100,6 @@
   :after ivy
   :init
   (ivy-rich-mode 1))
-
-(use-package counsel
-  :bind (("C-M-j" . 'counsel-switch-buffer)
-         :map minibuffer-local-map
-         ("C-r" . 'counsel-minibuffer-history))
-  :custom
-  (counsel-linux-app-format-function #'counsel-linux-app-format-function-name-only)
-  :config
-  (counsel-mode 1))
 
 (use-package ivy-prescient
   :after counsel
@@ -165,9 +165,9 @@
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
 
-(require 'julia-mode)
+(use-package julia-mode)
 
-(require 'julia-repl)
+(use-package julia-repl)
 (add-hook 'julia-mode-hook 'julia-repl-mode) ;; always use minor mode
 
 ;; problem with flatpak, may not be necessary now
@@ -175,8 +175,8 @@
       '((default "julia")                  ; having trouble finding it for some reason.
         (master "/opt/julia-1.6.0/bin/julia"))) ; give some help
 
+(use-package matlab-mode) ; error cannot load matlab-load
 ;;(require 'matlab-mode)
-;;(add-to-list 'load-path "~/.emacs.d/matlab-emacs-src/")
 ;;(require 'matlab-load)
 
 (setq matlab-indent-function-body t)  ; if you want function bodies indented
