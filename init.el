@@ -196,13 +196,17 @@
 
 ;; problem with flatpak, may not be necessary now
 (setq julia-repl-executable-records
-      '((default "julia")                  ; having trouble finding it for some reason.
+      '((default "julia")  ; having trouble finding it for some reason.
         (master "/opt/julia-1.6.0/bin/julia"))) ; give some help
 
-;; Error (use-package): Cannot load matlab-mode
-(use-package matlab-mode)
-;;(require 'matlab-mode)
-;;(require 'matlab-load)
+(use-package matlab
+  :ensure matlab-mode
+  :config
+  (add-to-list
+   'auto-mode-alist
+   '("\\.m\\'" . matlab-mode))
+  (setq matlab-indent-function t)
+  (setq matlab-shell-command "matlab"))
 
 (setq matlab-indent-function-body t)  ; if you want function bodies indented
  (setq matlab-verify-on-save-flag nil) ; turn off auto-verify on save
