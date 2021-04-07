@@ -59,6 +59,8 @@
                 eshell-mode-hook))
   (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
+(use-package org)
+
 ;; helpful for seeing commands on the side, maybe not necessary
 (use-package command-log-mode)
 
@@ -199,8 +201,8 @@
 
 ;; Error (use-package): Cannot load matlab-mode
 (use-package matlab-mode)
-(require 'matlab-mode)
-(require 'matlab-load)
+;;(require 'matlab-mode)
+;;(require 'matlab-load)
 
 (setq matlab-indent-function-body t)  ; if you want function bodies indented
  (setq matlab-verify-on-save-flag nil) ; turn off auto-verify on save
