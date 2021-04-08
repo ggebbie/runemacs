@@ -1,4 +1,3 @@
-
 (setq inhibit-startup-message t)
 
 (scroll-bar-mode -1)        ; Disable visible scrollbar
@@ -15,14 +14,13 @@
 (defvar efs/default-font-size 120)
 (defvar efs/default-variable-font-size 130)
 
-;(set-face-attribute 'default nil :font "Fira Code Retina" :height efs/default-font-size)
+(set-face-attribute 'default nil :font "Fira Code Retina" :height efs/default-font-size)
 
 ;; Set the fixed pitch face
-;(set-face-attribute 'fixed-pitch nil :font "Fira Code Retina" :height efs/default-font-size)
+(set-face-attribute 'fixed-pitch nil :font "Fira Code Retina" :height efs/default-font-size)
 
 ;; Set the variable pitch face
-;;(set-face-attribute 'variable-pitch nil :font "Cantarell" :height efs/default-variable-font-size :weight 'regular)
-
+;(set-face-attribute 'variable-pitch nil :font "Cantarell" :height efs/default-variable-font-size :weight 'regular)
 
 ;; Initialize package sources
 (require 'package)
@@ -59,7 +57,75 @@
                 eshell-mode-hook))
   (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
-(use-package org)
+(defun efs/org-mode-setup ()
+  (org-indent-mode)
+  (variable-pitch-mode 1)
+  (visual-line-mode 1))
+
+(use-package org
+  :pin org
+  :commands (org-capture org-agenda)
+  :hook (org-mode . efs/org-mode-setup)
+  :config
+  (setq org-ellipsis " ▾"
+	org-hide-emphasis-markers t))
+
+(use-package org-bullets
+  :hook (org-mode . org-bullets-mode)
+  :custom
+  (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+
+(defun efs/org-mode-visual-fill ()
+  (setq visual-fill-column-width 100
+        visual-fill-column-center-text t)
+  (visual-fill-column-mode 1))
+
+(use-package visual-fill-column
+  :hook (org-mode . efs/org-mode-visual-fill))
+
+(defun efs/org-font-setup ()
+  ;; Replace list hyphen with dot
+  (font-lock-add-keywords 'org-mode
+                          '(("^ *\\([-]\\) "
+                             (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
+
+  ;; Set faces for heading levels
+  (dolist (face '((org-level-1 . 1.2)
+                  (org-level-2 . 1.1)
+                  (org-level-3 . 1.05)
+                  (org-level-4 . 1.0)
+                  (org-level-5 . 1.1)
+                  (org-level-6 . 1.1)
+                  (org-level-7 . 1.1)
+                  (org-level-8 . 1.1)))
+    (set-face-attribute (car face) nil :font "Cantarell" :weight 'regular :height (cdr face)))
+
+  ;; Ensure that anything that should be fixed-pitch in Org files appears that way
+  (set-face-attribute 'org-block nil    :foreground nil :inherit 'fixed-pitch)
+  (set-face-attribute 'org-table nil    :inherit 'fixed-pitch)
+  (set-face-attribute 'org-formula nil  :inherit 'fixed-pitch)
+  (set-face-attribute 'org-code nil     :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-table nil    :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-checkbox nil  :inherit 'fixed-pitch)
+  (set-face-attribute 'line-number nil :inherit 'fixed-pitch)
+  (set-face-attribute 'line-number-current-line nil :inherit 'fixed-pitch))
+
+(defun efs/org-mode-setup ()
+  (org-indent-mode)
+  (variable-pitch-mode 1)
+  (visual-line-mode 1))
+
+;  (setq org-agenda-start-with-log-mode t)
+ ; (setq org-log-done 'time)
+  ;(setq org-log-into-drawer t)
+
+;  (setq org-agenda-files
+;        '("~/Projects/Code/emacs-from-scratch/OrgFiles/Tasks.org"
+;          "~/Projects/Code/emacs-from-scratch/OrgFiles/Habits.org"
+;          "~/Projects/Code/emacs-from-scratch/OrgFiles/Birthdays.org"))
 
 ;; helpful for seeing commands on the side, maybe not necessary
 (use-package command-log-mode)
@@ -123,29 +189,26 @@
   ([remap describe-variable] . counsel-describe-variable)
   ([remap describe-key] . helpful-key))
 
-;; (use-package evil
-;;   :init
-;;   (setq evil-want-integration t)
-;;   (setq evil-want-keybinding nil)
-;;   (setq evil-want-C-u-scroll t)
-;;   (setq evil-want-C-i-jump nil)
-;;   :config
-;;   (evil-mode 1)
-;;   (define-key evil-insert-state-map (kbd "C-g") 'evil-normal-state)
-;;   (define-key evil-insert-state-map (kbd "C-h") 'evil-delete-backward-char-and-join)
+(use-package evil
+  :init
+  (setq evil-want-integration t)
+  (setq evil-want-keybinding nil)
+  (setq evil-want-C-u-scroll t)
+  (setq evil-want-C-i-jump nil)
+  :config
+  (evil-mode 0)
+  (define-key evil-insert-state-map (kbd "C-g") 'evil-normal-state)
+  (define-key evil-insert-state-map (kbd "C-h") 'evil-delete-backward-char-and-join)
+;  Use visual line motions even outside of visual-line-mode buffers
+; (evil-global-set-key 'motion "j" 'evil-next-visual-line)
+; (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
+ (evil-set-initial-state 'messages-buffer-mode 'normal)
+ (evil-set-initial-state 'dashboard-mode 'normal))
 
-  ;; Use visual line motions even outside of visual-line-mode buffers
-;;  (evil-global-set-key 'motion "j" 'evil-next-visual-line)
-;;  (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
-
-;;  (evil-set-initial-state 'messages-buffer-mode 'normal)
-;;  (evil-set-initial-state 'dashboard-mode 'normal))
-
-;; (use-package evil-collection
-;;   :after evil
-;;   :config
-;;   (evil-collection-init))
-
+(use-package evil-collection
+  :after evil
+  :config
+  (evil-collection-init))
 
 ;; simplified mode line
 (use-package doom-modeline
@@ -188,6 +251,12 @@
 ;  :custom
 					;  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
 
+;; NOTE: Make sure to configure a GitHub token before using this package!
+;; - https://magit.vc/manual/forge/Token-Creation.html#Token-Creation
+;; - https://magit.vc/manual/ghub/Getting-Started.html#Getting-Started
+;(use-package forge
+; :after magit)
+
 
 (use-package julia-mode)
 
@@ -217,4 +286,3 @@
  (defun my-matlab-shell-mode-hook ()
    '())
  (add-hook 'matlab-shell-mode-hook 'my-matlab-shell-mode-hook)
-
