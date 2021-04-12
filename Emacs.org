@@ -52,6 +52,8 @@ perhaps needs to be after package manager?
   (add-hook mode (lambda () (display-line-numbers-mode 0))))
 #+end_src
 
+** Consider adding hydra, general
+
 * Emacs package manager
 #+begin_src emacs-lisp
 ;; Initialize package sources
