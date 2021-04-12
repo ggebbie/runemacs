@@ -1,10 +1,8 @@
 (setq inhibit-startup-message t)
-
 (scroll-bar-mode -1)        ; Disable visible scrollbar
 (tool-bar-mode -1)          ; Disable the toolbar
 (tooltip-mode -1)           ; Disable tooltips
 (set-fringe-mode 10)        ; Give some breathing room
-
 (menu-bar-mode -1)            ; Disable the menu bar
 
 ;; Set up the visible bell
@@ -20,7 +18,24 @@
 (set-face-attribute 'fixed-pitch nil :font "Fira Code Retina" :height efs/default-font-size)
 
 ;; Set the variable pitch face
-;(set-face-attribute 'variable-pitch nil :font "Cantarell" :height efs/default-variable-font-size :weight 'regular)
+(set-face-attribute 'variable-pitch nil :font "Cantarell" :height efs/default-variable-font-size :weight 'regular)
+
+;; Set frame transparency
+;;(set-frame-parameter (selected-frame) 'alpha efs/frame-transparency)
+;;(add-to-list 'default-frame-alist `(alpha . ,efs/frame-transparency))
+;;(set-frame-parameter (selected-frame) 'fullscreen 'maximized)
+;;(add-to-list 'default-frame-alist '(fullscreen . maximized))
+
+(column-number-mode)
+(global-display-line-numbers-mode t)
+
+;; Disable line numbers for some modes
+(dolist (mode '(org-mode-hook
+                term-mode-hook
+                shell-mode-hook
+                treemacs-mode-hook
+                eshell-mode-hook))
+  (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
 ;; Initialize package sources
 (require 'package)
@@ -40,23 +55,6 @@
 (require 'use-package)
 (setq use-package-always-ensure t)
 
-(column-number-mode)
-(global-display-line-numbers-mode t)
-
-;; Set frame transparency
-;;(set-frame-parameter (selected-frame) 'alpha efs/frame-transparency)
-;;(add-to-list 'default-frame-alist `(alpha . ,efs/frame-transparency))
-;;(set-frame-parameter (selected-frame) 'fullscreen 'maximized)
-;;(add-to-list 'default-frame-alist '(fullscreen . maximized))
-
-;; Disable line numbers for some modes
-(dolist (mode '(org-mode-hook
-                term-mode-hook
-                shell-mode-hook
-                treemacs-mode-hook
-                eshell-mode-hook))
-  (add-hook mode (lambda () (display-line-numbers-mode 0))))
-
 (defun efs/org-mode-setup ()
   (org-indent-mode)
   (variable-pitch-mode 1)
@@ -68,7 +66,7 @@
   :hook (org-mode . efs/org-mode-setup)
   :config
   (setq org-ellipsis " ▾"
-	org-hide-emphasis-markers t)
+        org-hide-emphasis-markers t)
 
   (setq org-agenda-start-with-log-mode t)
   (setq org-log-done 'time)
@@ -78,106 +76,6 @@
         '("~/.emacs.d/OrgFiles/Tasks.org")))
 ;          "~/.emacs.d/OrgFiles/Habits.org"
 ;          "~/.emacs.d/OrgFiles/Birthdays.org")))
-
-  (setq org-todo-keywords
-    '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")
-      (sequence "BACKLOG(b)" "PLAN(p)" "READY(r)" "ACTIVE(a)" "REVIEW(v)" "WAIT(w@/!)" "HOLD(h)" "|" "COMPLETED(c)" "CANC(k@)")))
-
-  ;; Configure custom agenda views
-  (setq org-agenda-custom-commands
-   '(("d" "Dashboard"
-     ((agenda "" ((org-deadline-warning-days 7)))
-      (todo "NEXT"
-        ((org-agenda-overriding-header "Next Tasks")))
-      (tags-todo "agenda/ACTIVE" ((org-agenda-overriding-header "Active Projects")))))
-
-    ("n" "Next Tasks"
-     ((todo "NEXT"
-        ((org-agenda-overriding-header "Next Tasks")))))
-
-    ("W" "Work Tasks" tags-todo "+work-email")
-
-    ;; Low-effort next actions
-    ("e" tags-todo "+TODO=\"NEXT\"+Effort<15&+Effort>0"
-     ((org-agenda-overriding-header "Low Effort Tasks")
-      (org-agenda-max-todos 20)
-      (org-agenda-files org-agenda-files)))
-
-    ("w" "Workflow Status"
-     ((todo "WAIT"
-            ((org-agenda-overriding-header "Waiting on External")
-             (org-agenda-files org-agenda-files)))
-      (todo "REVIEW"
-            ((org-agenda-overriding-header "In Review")
-             (org-agenda-files org-agenda-files)))
-      (todo "PLAN"
-            ((org-agenda-overriding-header "In Planning")
-             (org-agenda-todo-list-sublevels nil)
-             (org-agenda-files org-agenda-files)))
-      (todo "BACKLOG"
-            ((org-agenda-overriding-header "Project Backlog")
-             (org-agenda-todo-list-sublevels nil)
-             (org-agenda-files org-agenda-files)))
-      (todo "READY"
-            ((org-agenda-overriding-header "Ready for Work")
-             (org-agenda-files org-agenda-files)))
-      (todo "ACTIVE"
-            ((org-agenda-overriding-header "Active Projects")
-             (org-agenda-files org-agenda-files)))
-      (todo "COMPLETED"
-            ((org-agenda-overriding-header "Completed Projects")
-             (org-agenda-files org-agenda-files)))
-      (todo "CANC"
-            ((org-agenda-overriding-header "Cancelled Projects")
-             (org-agenda-files org-agenda-files)))))))
-
-
-  (setq org-capture-templates
-    `(("t" "Tasks / Projects")
-      ("tt" "Task" entry (file+olp "~/.emacs.d/OrgFiles/Tasks.org" "Inbox")
-           "* TODO %?\n  %U\n  %a\n  %i" :empty-lines 1)
-
-      ("j" "Journal Entries")
-      ("jj" "Journal" entry
-           (file+olp+datetree "~/.emacs.d/OrgFiles/Journal.org")
-           "\n* %<%I:%M %p> - Journal :journal:\n\n%?\n\n"
-           ;; ,(dw/read-file-as-string "~/Notes/Templates/Daily.org")
-           :clock-in :clock-resume
-           :empty-lines 1)
-      ("jm" "Meeting" entry
-           (file+olp+datetree "~/.emacs.d/OrgFiles/Journal.org")
-           "* %<%I:%M %p> - %a :meetings:\n\n%?\n\n"
-           :clock-in :clock-resume
-           :empty-lines 1)
-
-      ("w" "Workflows")
-      ("we" "Checking Email" entry (file+olp+datetree "~/.emacs.d/OrgFiles/Journal.org")
-           "* Checking Email :email:\n\n%?" :clock-in :clock-resume :empty-lines 1)
-
-      ("m" "Metrics Capture")
-      ("mw" "Weight" table-line (file+headline "~/.emacs.d/OrgFiles/Metrics.org" "Weight")
-       "| %U | %^{Weight} | %^{Notes} |" :kill-buffer t)))
-
-  (setq org-tag-alist
-    '((:startgroup)
-       ; Put mutually exclusive tags here
-       (:endgroup)
-       ("@errand" . ?E)
-       ("@home" . ?H)
-       ("@work" . ?W)
-       ("agenda" . ?a)
-       ("planning" . ?p)
-       ("publish" . ?P)
-       ("batch" . ?b)
-       ("note" . ?n)
-       ("idea" . ?i)))
-
-  (setq org-refile-targets
-    '(("~/.emacs.d/OrgFiles/Archive.org" :maxlevel . 1)
-      ("~/.emacs.d/OrgFiles/Tasks.org" :maxlevel . 1)))
-
-  ;; Save Org buffers after refiling!
-  (advice-add 'org-refile :after 'org-save-all-org-buffers)
 
 (use-package org-bullets
   :hook (org-mode . org-bullets-mode)
@@ -222,12 +120,135 @@
   (set-face-attribute 'line-number nil :inherit 'fixed-pitch)
   (set-face-attribute 'line-number-current-line nil :inherit 'fixed-pitch))
 
-(defun efs/org-mode-setup ()
-  (org-indent-mode)
-  (variable-pitch-mode 1)
-  (visual-line-mode 1))
+(setq org-todo-keywords
+  '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")
+    (sequence "BACKLOG(b)" "PLAN(p)" "READY(r)" "ACTIVE(a)" "REVIEW(v)" "WAIT(w@/!)" "HOLD(h)" "|" "COMPLETED(c)" "CANC(k@)")))
 
-;; helpful for seeing commands on the side, maybe not necessary
+;; Configure custom agenda views
+(setq org-agenda-custom-commands
+ '(("d" "Dashboard"
+   ((agenda "" ((org-deadline-warning-days 7)))
+    (todo "NEXT"
+      ((org-agenda-overriding-header "Next Tasks")))
+    (tags-todo "agenda/ACTIVE" ((org-agenda-overriding-header "Active Projects")))))
+
+  ("n" "Next Tasks"
+   ((todo "NEXT"
+      ((org-agenda-overriding-header "Next Tasks")))))
+
+  ("W" "Work Tasks" tags-todo "+work-email")
+
+  ;; Low-effort next actions
+  ("e" tags-todo "+TODO=\"NEXT\"+Effort<15&+Effort>0"
+   ((org-agenda-overriding-header "Low Effort Tasks")
+    (org-agenda-max-todos 20)
+    (org-agenda-files org-agenda-files)))
+
+  ("w" "Workflow Status"
+   ((todo "WAIT"
+          ((org-agenda-overriding-header "Waiting on External")
+           (org-agenda-files org-agenda-files)))
+    (todo "REVIEW"
+          ((org-agenda-overriding-header "In Review")
+           (org-agenda-files org-agenda-files)))
+    (todo "PLAN"
+          ((org-agenda-overriding-header "In Planning")
+           (org-agenda-todo-list-sublevels nil)
+           (org-agenda-files org-agenda-files)))
+    (todo "BACKLOG"
+          ((org-agenda-overriding-header "Project Backlog")
+           (org-agenda-todo-list-sublevels nil)
+           (org-agenda-files org-agenda-files)))
+    (todo "READY"
+          ((org-agenda-overriding-header "Ready for Work")
+           (org-agenda-files org-agenda-files)))
+    (todo "ACTIVE"
+          ((org-agenda-overriding-header "Active Projects")
+           (org-agenda-files org-agenda-files)))
+    (todo "COMPLETED"
+          ((org-agenda-overriding-header "Completed Projects")
+           (org-agenda-files org-agenda-files)))
+    (todo "CANC"
+          ((org-agenda-overriding-header "Cancelled Projects")
+           (org-agenda-files org-agenda-files)))))))
+
+(setq org-capture-templates
+  `(("t" "Tasks / Projects")
+    ("tt" "Task" entry (file+olp "~/.emacs.d/OrgFiles/Tasks.org" "Inbox")
+         "* TODO %?\n  %U\n  %a\n  %i" :empty-lines 1)
+
+    ("j" "Journal Entries")
+    ("jj" "Journal" entry
+         (file+olp+datetree "~/.emacs.d/OrgFiles/Journal.org")
+         "\n* %<%I:%M %p> - Journal :journal:\n\n%?\n\n"
+         ;; ,(dw/read-file-as-string "~/Notes/Templates/Daily.org")
+         :clock-in :clock-resume
+         :empty-lines 1)
+    ("jm" "Meeting" entry
+         (file+olp+datetree "~/.emacs.d/OrgFiles/Journal.org")
+         "* %<%I:%M %p> - %a :meetings:\n\n%?\n\n"
+         :clock-in :clock-resume
+         :empty-lines 1)
+
+    ("w" "Workflows")
+    ("we" "Checking Email" entry (file+olp+datetree "~/.emacs.d/OrgFiles/Journal.org")
+         "* Checking Email :email:\n\n%?" :clock-in :clock-resume :empty-lines 1)
+
+    ("m" "Metrics Capture")
+    ("mw" "Weight" table-line (file+headline "~/.emacs.d/OrgFiles/Metrics.org" "Weight")
+     "| %U | %^{Weight} | %^{Notes} |" :kill-buffer t)))
+
+(setq org-tag-alist
+  '((:startgroup)
+     ; Put mutually exclusive tags here
+     (:endgroup)
+     ("@errand" . ?E)
+     ("@home" . ?H)
+     ("@work" . ?W)
+     ("agenda" . ?a)
+     ("planning" . ?p)
+     ("publish" . ?P)
+     ("batch" . ?b)
+     ("note" . ?n)
+     ("idea" . ?i)))
+
+(setq org-refile-targets
+  '(("~/.emacs.d/OrgFiles/Archive.org" :maxlevel . 1)
+    ("~/.emacs.d/OrgFiles/Tasks.org" :maxlevel . 1)))
+
+;; Save Org buffers after refiling!
+(advice-add 'org-refile :after 'org-save-all-org-buffers)
+
+;; Automatically tangle our Emacs.org config file when we save it
+  (defun efs/org-babel-tangle-config ()
+    (when (string-equal (file-name-directory (buffer-file-name))
+                        (expand-file-name user-emacs-directory))
+      ;; Dynamic scoping to the rescue
+      (let ((org-confirm-babel-evaluate nil))
+        (org-babel-tangle))))
+
+  (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'efs/org-babel-tangle-config)))
+
+(with-eval-after-load 'org
+  (org-babel-do-load-languages
+      'org-babel-load-languages
+      '((emacs-lisp . t)
+	(python . t)
+	(matlab . t)))
+
+  (push '("conf-unix" . conf-unix) org-src-lang-modes))
+
+(setq org-confirm_babel-evaluate nil)
+
+(with-eval-after-load 'org
+  ;; This is needed as of Org 9.2
+  (require 'org-tempo)
+
+  (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
+  (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+  (add-to-list 'org-structure-template-alist '("py" . "src python"))
+  (add-to-list 'org-structure-template-alist '("ma" . "src matlab")))
+
 (use-package command-log-mode)
 
 (use-package which-key
@@ -236,6 +257,17 @@
   :config
   (which-key-mode)
   (setq which-key-idle-delay 1))
+
+(use-package helpful
+  :commands (helpful-callable helpful-variable helpful-command helpful-key)
+  :custom
+  (counsel-describe-function-function #'helpful-callable)
+  (counsel-describe-variable-function #'helpful-variable)
+  :bind
+  ([remap describe-function] . counsel-describe-function)
+  ([remap describe-command] . helpful-command)
+  ([remap describe-variable] . counsel-describe-variable)
+  ([remap describe-key] . helpful-key))
 
 (use-package counsel
   :bind (("C-M-j" . 'counsel-switch-buffer)
@@ -278,17 +310,6 @@
   ;(prescient-persist-mode 1)
   (ivy-prescient-mode 1))
 
-(use-package helpful
-  :commands (helpful-callable helpful-variable helpful-command helpful-key)
-  :custom
-  (counsel-describe-function-function #'helpful-callable)
-  (counsel-describe-variable-function #'helpful-variable)
-  :bind
-  ([remap describe-function] . counsel-describe-function)
-  ([remap describe-command] . helpful-command)
-  ([remap describe-variable] . counsel-describe-variable)
-  ([remap describe-key] . helpful-key))
-
 (use-package evil
   :init
   (setq evil-want-integration t)
@@ -327,9 +348,6 @@
 (use-package all-the-icons-dired
   :hook (dired-mode . all-the-icons-dired-mode))
 
-(use-package rainbow-delimiters
-  :hook (prog-mode . rainbow-delimiters-mode))
-
 (use-package projectile
   :diminish projectile-mode
   :config (projectile-mode)
@@ -349,7 +367,7 @@
 (use-package magit
   :commands magit-status)
 ;  :custom
-					;  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
+;  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
 
 ;; NOTE: Make sure to configure a GitHub token before using this package!
 ;; - https://magit.vc/manual/forge/Token-Creation.html#Token-Creation
@@ -357,35 +375,8 @@
 ;(use-package forge
 ; :after magit)
 
-(with-eval-after-load 'org
-  (org-babel-do-load-languages
-      'org-babel-load-languages
-      '((emacs-lisp . t)
-	(python . t)
-	(matlab . t)))
-
-  (push '("conf-unix" . conf-unix) org-src-lang-modes))
-
-(setq org-confirm_babel-evaluate nil)
-
-(with-eval-after-load 'org
-  ;; This is needed as of Org 9.2
-  (require 'org-tempo)
-
-  (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
-  (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
-  (add-to-list 'org-structure-template-alist '("py" . "src python"))
-  (add-to-list 'org-structure-template-alist '("ma" . "src matlab")))
-
-(use-package julia-mode)
-
-(use-package julia-repl)
-(add-hook 'julia-mode-hook 'julia-repl-mode) ;; always use minor mode
-
-;; problem with flatpak, may not be necessary now
-(setq julia-repl-executable-records
-      '((default "julia")  ; having trouble finding it for some reason.
-        (master "/opt/julia-1.6.0/bin/julia"))) ; give some help
+(use-package rainbow-delimiters
+  :hook (prog-mode . rainbow-delimiters-mode))
 
 (use-package matlab
   :ensure matlab-mode
@@ -405,3 +396,13 @@
  (defun my-matlab-shell-mode-hook ()
    '())
  (add-hook 'matlab-shell-mode-hook 'my-matlab-shell-mode-hook)
+
+(use-package julia-mode)
+
+(use-package julia-repl)
+(add-hook 'julia-mode-hook 'julia-repl-mode) ;; always use minor mode
+
+;; problem with flatpak, may not be necessary now
+(setq julia-repl-executable-records
+      '((default "julia")  ; having trouble finding it for some reason.
+        (master "/opt/julia-1.6.0/bin/julia"))) ; give some help
