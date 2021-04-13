@@ -55,6 +55,31 @@
 (require 'use-package)
 (setq use-package-always-ensure t)
 
+(use-package general
+    :after evil
+    :config
+    (general-create-definer efs/leader-keys
+      :keymaps '(normal insert visual emacs)
+      :prefix "SPC"
+      :global-prefix "C-SPC")
+
+    (efs/leader-keys
+      "t"  '(:ignore t :which-key "toggles")
+      "tt" '(counsel-load-theme :which-key "choose theme")
+      "fde" '(lambda () (interactive) (find-file (expand-file-name "~/.emacs.d/Emacs.org")))))
+
+(use-package hydra
+   :defer t)
+
+ (defhydra hydra-text-scale (:timeout 4)
+   "scale text"
+   ("j" text-scale-increase "in")
+   ("k" text-scale-decrease "out")
+   ("f" nil "finished" :exit t))
+
+; (efs/leader-keys
+;   "ts" '(hydra-text-scale/body :which-key "scale text"))
+
 (defun efs/org-mode-setup ()
   (org-indent-mode)
   (variable-pitch-mode 1)
@@ -336,10 +361,7 @@
   :init (doom-modeline-mode 1)
   :custom ((doom-modeline-height 10)))
 
-;;(use-package general)
-
 ;; I pick palenight below
-;(load-theme 'wombat)
 (use-package doom-themes
   :init (load-theme 'doom-palenight t))
 
@@ -406,3 +428,63 @@
 (setq julia-repl-executable-records
       '((default "julia")  ; having trouble finding it for some reason.
         (master "/opt/julia-1.6.0/bin/julia"))) ; give some help
+
+(defun efs/lsp-mode-setup ()
+  (setq lsp-headerline-breadcrumb-segments '(path-up-to-project file symbols))
+  (lsp-headerline-breadcrumb-mode))
+
+(use-package lsp-mode
+  :commands (lsp lsp-deferred)
+  :hook (lsp-mode . efs/lsp-mode-setup)
+  :init
+  (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
+  :config
+  (lsp-enable-which-key-integration t))
+
+(use-package lsp-ui
+  :hook (lsp-mode . lsp-ui-mode)
+  :custom
+  (lsp-ui-doc-position 'bottom))
+
+(use-package lsp-treemacs
+  :after lsp)
+
+(use-package lsp-ivy
+  :after lsp)
+
+(use-package company
+  :after lsp-mode
+  :hook (lsp-mode . company-mode)
+  :bind (:map company-active-map
+         ("<tab>" . company-complete-selection))
+        (:map lsp-mode-map
+         ("<tab>" . company-indent-or-complete-common))
+  :custom
+  (company-minimum-prefix-length 1)
+  (company-idle-delay 0.0))
+
+(use-package company-box
+  :hook (company-mode . company-box-mode))
+
+(setq lsp-julia-package-dir nil)
+  (setq lsp-julia-flags `("-J/home/gebbie/.julia/languageserver.so"))
+  ;; (require 'lsp-julia) must come after this!
+
+(use-package lsp-julia
+  :config
+  (setq lsp-julia-default-environment "~/.julia/environments/v1.6"))
+
+(add-hook 'julia-mode-julia-mode-hook #'lsp-mode)
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-selected-packages
+   '(which-key visual-fill-column use-package rainbow-delimiters org-bullets no-littering matlab-mode magit lsp-ui lsp-treemacs lsp-julia lsp-ivy julia-repl ivy-rich ivy-prescient helpful general evil-collection doom-themes doom-modeline counsel-projectile company-box command-log-mode auto-package-update all-the-icons-dired)))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
