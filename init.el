@@ -245,34 +245,41 @@
 (advice-add 'org-refile :after 'org-save-all-org-buffers)
 
 ;; Automatically tangle our Emacs.org config file when we save it
-  (defun efs/org-babel-tangle-config ()
-    (when (string-equal (file-name-directory (buffer-file-name))
-                        (expand-file-name user-emacs-directory))
-      ;; Dynamic scoping to the rescue
-      (let ((org-confirm-babel-evaluate nil))
-        (org-babel-tangle))))
+    (defun efs/org-babel-tangle-config ()
+      (when (string-equal (file-name-directory (buffer-file-name))
+                          (expand-file-name user-emacs-directory))
+        ;; Dynamic scoping to the rescue
+        (let ((org-confirm-babel-evaluate nil))
+          (org-babel-tangle))))
 
-  (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'efs/org-babel-tangle-config)))
+    (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'efs/org-babel-tangle-config)))
 
-(with-eval-after-load 'org
-  (org-babel-do-load-languages
-      'org-babel-load-languages
-      '((emacs-lisp . t)
-	(python . t)
-	(matlab . t)))
+  (with-eval-after-load 'org
+    (org-babel-do-load-languages
+    'org-babel-load-languages
+   '((emacs-lisp . t)
+;;       (matlab . t)
+;;       (julia . t)
+       (python . t)))
 
-  (push '("conf-unix" . conf-unix) org-src-lang-modes))
+    (push '("conf-unix" . conf-unix) org-src-lang-modes))
 
-(setq org-confirm_babel-evaluate nil)
+  (setq org-confirm_babel-evaluate nil)
 
-(with-eval-after-load 'org
-  ;; This is needed as of Org 9.2
-  (require 'org-tempo)
+  (with-eval-after-load 'org
+    ;; This is needed as of Org 9.2
+    (require 'org-tempo)
 
-  (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
-  (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
-  (add-to-list 'org-structure-template-alist '("py" . "src python"))
-  (add-to-list 'org-structure-template-alist '("ma" . "src matlab")))
+    (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
+    (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+    (add-to-list 'org-structure-template-alist '("py" . "src python"))
+    (add-to-list 'org-structure-template-alist '("ma" . "src matlab")))
+
+;;    (use-package jupyter)
+
+;;  (setq org-babel-default-header-args:jupyter-julia '((:async . "yes")
+;;                                                      (:session . "jl")
+;;                                                      (:kernel . "julia-1.6")))
 
 (use-package command-log-mode)
 
@@ -392,10 +399,12 @@
 ;  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
 
 ;; NOTE: Make sure to configure a GitHub token before using this package!
-;; - https://magit.vc/manual/forge/Token-Creation.html#Token-Creation
-;; - https://magit.vc/manual/ghub/Getting-Started.html#Getting-Started
-;(use-package forge
-; :after magit)
+  ;; - https://magit.vc/manual/forge/Token-Creation.html#Token-Creation
+  ;; - https://magit.vc/manual/ghub/Getting-Started.html#Getting-Started
+(use-package forge
+  :after magit)
+
+(setq auth-sources '("~/.authinfo.gpg"))
 
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
@@ -441,50 +450,38 @@
   :config
   (lsp-enable-which-key-integration t))
 
-(use-package lsp-ui
-  :hook (lsp-mode . lsp-ui-mode)
-  :custom
-  (lsp-ui-doc-position 'bottom))
+;;  (use-package lsp-ui
+  ;;  :hook (lsp-mode . lsp-ui-mode)
+;;    :custom
+;;    (lsp-ui-doc-position 'bottom))
 
-(use-package lsp-treemacs
-  :after lsp)
+;;(use-package lsp-treemacs
+;;    :after lsp)
 
 (use-package lsp-ivy
   :after lsp)
 
-(use-package company
-  :after lsp-mode
-  :hook (lsp-mode . company-mode)
-  :bind (:map company-active-map
-         ("<tab>" . company-complete-selection))
-        (:map lsp-mode-map
-         ("<tab>" . company-indent-or-complete-common))
-  :custom
-  (company-minimum-prefix-length 1)
-  (company-idle-delay 0.0))
+;;  (use-package company
+  ;;  :after lsp-mode
+;;    :hook (lsp-mode . company-mode)
+;;    :bind (:map company-active-map
+;;           ("<tab>" . company-complete-selection))
+;;          (:map lsp-mode-map
+;;           ("<tab>" . company-indent-or-complete-common))
+;;    :custom
+;;    (company-minimum-prefix-length 1)
+;;    (company-idle-delay 0.0))
 
-(use-package company-box
-  :hook (company-mode . company-box-mode))
+;;  (use-package company-box
+;;    :hook (company-mode . company-box-mode))
 
-(setq lsp-julia-package-dir nil)
-  (setq lsp-julia-flags `("-J/home/gebbie/.julia/languageserver.so"))
-  ;; (require 'lsp-julia) must come after this!
+;;      (setq lsp-julia-package-dir nil)
+;;      (setq lsp-julia-flags `("-J ~/.julia/languageserver.so"))
+;;      (require 'lsp-julia) ;must come after this!
 
-(use-package lsp-julia
-  :config
-  (setq lsp-julia-default-environment "~/.julia/environments/v1.6"))
+;;    (use-package lsp-julia
+;;      :config
+;;      (setq lsp-julia-default-environment "~/.julia/environments/v1.6")
+;;      (setq lsp-enable-folding t))
 
-(add-hook 'julia-mode-julia-mode-hook #'lsp-mode)
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   '(which-key visual-fill-column use-package rainbow-delimiters org-bullets no-littering matlab-mode magit lsp-ui lsp-treemacs lsp-julia lsp-ivy julia-repl ivy-rich ivy-prescient helpful general evil-collection doom-themes doom-modeline counsel-projectile company-box command-log-mode auto-package-update all-the-icons-dired)))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
+;;    (add-hook 'julia-mode-hook #'lsp-mode)
