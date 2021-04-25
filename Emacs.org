@@ -20,6 +20,9 @@
   (defvar efs/default-font-size 120)
   (defvar efs/default-variable-font-size 130)
 
+  ;; Make frame transparency overridable
+  ;;  (defvar efs/frame-transparency '(90 . 90))
+
   (set-face-attribute 'default nil :font "Fira Code Retina" :height efs/default-font-size)
 
   ;; Set the fixed pitch face
@@ -29,10 +32,12 @@
   (set-face-attribute 'variable-pitch nil :font "Cantarell" :height efs/default-variable-font-size :weight 'regular)
 
   ;; Set frame transparency
-  ;;(set-frame-parameter (selected-frame) 'alpha efs/frame-transparency)
-  ;;(add-to-list 'default-frame-alist `(alpha . ,efs/frame-transparency))
-  ;;(set-frame-parameter (selected-frame) 'fullscreen 'maximized)
-  ;;(add-to-list 'default-frame-alist '(fullscreen . maximized))
+  ;;  (set-frame-parameter (selected-frame) 'alpha efs/frame-transparency)
+  ;;  (add-to-list 'default-frame-alist `(alpha . ,efs/frame-transparency))
+
+  ;; maximize frame
+  (set-frame-parameter (selected-frame) 'fullscreen 'maximized)
+  (add-to-list 'default-frame-alist '(fullscreen . maximized))
 #+end_src
 
 ** Line numbers
@@ -542,7 +547,6 @@ This is an example of using [[https://github.com/abo-abo/hydra][Hydra]] to desig
         (master "/opt/julia-1.6.0/bin/julia"))) ; give some help
 #+end_src
 
-
 * Languages
 *** IDE Features with lsp-mode
 
@@ -576,10 +580,10 @@ The =which-key= integration adds helpful descriptions of the various keys so you
 
 #+begin_src emacs-lisp
 
-;;  (use-package lsp-ui
-  ;;  :hook (lsp-mode . lsp-ui-mode)
-;;    :custom
-;;    (lsp-ui-doc-position 'bottom))
+  (use-package lsp-ui
+  :hook (lsp-mode . lsp-ui-mode)
+    :custom
+    (lsp-ui-doc-position 'bottom))
 
 #+end_src
 
@@ -597,8 +601,8 @@ This package is built on the [[https://github.com/Alexander-Miller/treemacs][tre
 
 #+begin_src emacs-lisp
 
-  ;;(use-package lsp-treemacs
-;;    :after lsp)
+  (use-package lsp-treemacs
+    :after lsp)
 
 #+end_src
 
@@ -658,3 +662,46 @@ See https://github.com/non-Jedi/lsp-julia for installation instructions.
 
 ;;    (add-hook 'julia-mode-hook #'lsp-mode)
 #+end_src
+
+* Window management
+** Winum
+It puts numbers in the modeline! C-x w and the number to switch.
+#+begin_src emacs-lisp
+  (use-package winum
+    :config
+  (winum-mode))
+#+end_src
+
+** Ace window
+Use the home row to select window, but doesn't show them until M-x ace-window.
+#+begin_src emacs-lisp
+  (use-package ace-window)
+  (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
+#+end_src
+
+** Winner mode
+winner-mode provides useful functions for undoing and redoing window configurations:
+#+begin_src emacs-lisp
+  (use-package winner
+    :ensure nil
+    :config
+    (winner-mode))
+#+end_src
+
+** Buffer move
+Use buffer-move for a more general solution: Turn on a mode where you can move the current buffer around with arrow keys, any other key finishes it
+#+begin_src emacs-lisp
+  (use-package buffer-move)
+#+end_src
+
+** Windmove keybindings
+Default keybindings conflict with org mode and other selections.
+Here I make my own keybindings in analogy to emacs point movement.
+#+begin_src emacs-lisp
+    ;;  (windmove-default-keybindings nil)
+  (global-set-key (kbd "C-M-b")  'windmove-left)
+  (global-set-key (kbd "C-M-f") 'windmove-right)
+  (global-set-key (kbd "C-M-p")    'windmove-up)
+  (global-set-key (kbd "C-M-n")  'windmove-down)
+#+end_src
+

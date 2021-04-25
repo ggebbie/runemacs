@@ -12,6 +12,9 @@
 (defvar efs/default-font-size 120)
 (defvar efs/default-variable-font-size 130)
 
+;; Make frame transparency overridable
+;;  (defvar efs/frame-transparency '(90 . 90))
+
 (set-face-attribute 'default nil :font "Fira Code Retina" :height efs/default-font-size)
 
 ;; Set the fixed pitch face
@@ -21,10 +24,12 @@
 (set-face-attribute 'variable-pitch nil :font "Cantarell" :height efs/default-variable-font-size :weight 'regular)
 
 ;; Set frame transparency
-;;(set-frame-parameter (selected-frame) 'alpha efs/frame-transparency)
-;;(add-to-list 'default-frame-alist `(alpha . ,efs/frame-transparency))
-;;(set-frame-parameter (selected-frame) 'fullscreen 'maximized)
-;;(add-to-list 'default-frame-alist '(fullscreen . maximized))
+;;  (set-frame-parameter (selected-frame) 'alpha efs/frame-transparency)
+;;  (add-to-list 'default-frame-alist `(alpha . ,efs/frame-transparency))
+
+;; maximize frame
+(set-frame-parameter (selected-frame) 'fullscreen 'maximized)
+(add-to-list 'default-frame-alist '(fullscreen . maximized))
 
 (column-number-mode)
 (global-display-line-numbers-mode t)
@@ -450,13 +455,13 @@
   :config
   (lsp-enable-which-key-integration t))
 
-;;  (use-package lsp-ui
-  ;;  :hook (lsp-mode . lsp-ui-mode)
-;;    :custom
-;;    (lsp-ui-doc-position 'bottom))
+(use-package lsp-ui
+:hook (lsp-mode . lsp-ui-mode)
+  :custom
+  (lsp-ui-doc-position 'bottom))
 
-;;(use-package lsp-treemacs
-;;    :after lsp)
+(use-package lsp-treemacs
+  :after lsp)
 
 (use-package lsp-ivy
   :after lsp)
@@ -485,3 +490,23 @@
 ;;      (setq lsp-enable-folding t))
 
 ;;    (add-hook 'julia-mode-hook #'lsp-mode)
+
+(use-package winum
+  :config
+(winum-mode))
+
+(use-package ace-window)
+(setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
+
+(use-package winner
+  :ensure nil
+  :config
+  (winner-mode))
+
+(use-package buffer-move)
+
+;;  (windmove-default-keybindings nil)
+(global-set-key (kbd "C-M-b")  'windmove-left)
+(global-set-key (kbd "C-M-f") 'windmove-right)
+(global-set-key (kbd "C-M-p")    'windmove-up)
+(global-set-key (kbd "C-M-n")  'windmove-down)
