@@ -9,23 +9,23 @@
 (setq visible-bell t)
 
 ;; You will most likely need to adjust this font size for your system!
-(defvar efs/default-font-size 120)
-(defvar efs/default-variable-font-size 130)
+(defvar runemacs/default-font-size 120)
+(defvar runemacs/default-variable-font-size 130)
 
 ;; Make frame transparency overridable
-;;  (defvar efs/frame-transparency '(90 . 90))
+;;  (defvar runemacs/frame-transparency '(90 . 90))
 
-(set-face-attribute 'default nil :font "Fira Code Retina" :height efs/default-font-size)
+(set-face-attribute 'default nil :font "Fira Code Retina" :height runemacs/default-font-size)
 
 ;; Set the fixed pitch face
-(set-face-attribute 'fixed-pitch nil :font "Fira Code Retina" :height efs/default-font-size)
+(set-face-attribute 'fixed-pitch nil :font "Fira Code Retina" :height runemacs/default-font-size)
 
 ;; Set the variable pitch face
-(set-face-attribute 'variable-pitch nil :font "Cantarell" :height efs/default-variable-font-size :weight 'regular)
+(set-face-attribute 'variable-pitch nil :font "Cantarell" :height runemacs/default-variable-font-size :weight 'regular)
 
 ;; Set frame transparency
-;;  (set-frame-parameter (selected-frame) 'alpha efs/frame-transparency)
-;;  (add-to-list 'default-frame-alist `(alpha . ,efs/frame-transparency))
+;;  (set-frame-parameter (selected-frame) 'alpha runemacs/frame-transparency)
+;;  (add-to-list 'default-frame-alist `(alpha . ,runemacs/frame-transparency))
 
 ;; maximize frame
 (set-frame-parameter (selected-frame) 'fullscreen 'maximized)
@@ -63,29 +63,36 @@
 (use-package general
     :after evil
     :config
-    (general-create-definer efs/leader-keys
+    (general-create-definer runemacs/leader-keys
       :keymaps '(normal insert visual emacs)
       :prefix "SPC"
       :global-prefix "C-SPC")
 
-    (efs/leader-keys
+    (runemacs/leader-keys
       "t"  '(:ignore t :which-key "toggles")
       "tt" '(counsel-load-theme :which-key "choose theme")
       "fde" '(lambda () (interactive) (find-file (expand-file-name "~/.emacs.d/Emacs.org")))))
 
+(use-package which-key
+  :defer 0
+  :diminish which-key-mode
+  :config
+  (which-key-mode)
+  (setq which-key-idle-delay 1))
+
 (use-package hydra
-   :defer t)
+    :defer t)
 
- (defhydra hydra-text-scale (:timeout 4)
-   "scale text"
-   ("j" text-scale-increase "in")
-   ("k" text-scale-decrease "out")
-   ("f" nil "finished" :exit t))
+  (defhydra hydra-text-scale (:timeout 4)
+    "scale text"
+    ("j" text-scale-increase "in")
+    ("k" text-scale-decrease "out")
+    ("f" nil "finished" :exit t))
 
-; (efs/leader-keys
-;   "ts" '(hydra-text-scale/body :which-key "scale text"))
+;  (runemacs/leader-keys
+;    "ts" '(hydra-text-scale/body :which-key "scale text"))
 
-(defun efs/org-mode-setup ()
+(defun runemacs/org-mode-setup ()
   (org-indent-mode)
   (variable-pitch-mode 1)
   (visual-line-mode 1))
@@ -93,7 +100,7 @@
 (use-package org
   :pin org
   :commands (org-capture org-agenda)
-  :hook (org-mode . efs/org-mode-setup)
+  :hook (org-mode . runemacs/org-mode-setup)
   :config
   (setq org-ellipsis " ▾"
         org-hide-emphasis-markers t)
@@ -104,23 +111,21 @@
 
     (setq org-agenda-files
         '("~/.emacs.d/OrgFiles/Tasks.org")))
-;          "~/.emacs.d/OrgFiles/Habits.org"
-;          "~/.emacs.d/OrgFiles/Birthdays.org")))
 
 (use-package org-bullets
   :hook (org-mode . org-bullets-mode)
   :custom
   (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 
-(defun efs/org-mode-visual-fill ()
+(defun runemacs/org-mode-visual-fill ()
   (setq visual-fill-column-width 100
         visual-fill-column-center-text t)
   (visual-fill-column-mode 1))
 
 (use-package visual-fill-column
-  :hook (org-mode . efs/org-mode-visual-fill))
+  :hook (org-mode . runemacs/org-mode-visual-fill))
 
-(defun efs/org-font-setup ()
+(defun runemacs/org-font-setup ()
   ;; Replace list hyphen with dot
   (font-lock-add-keywords 'org-mode
                           '(("^ *\\([-]\\) "
@@ -166,41 +171,7 @@
    ((todo "NEXT"
       ((org-agenda-overriding-header "Next Tasks")))))
 
-  ("W" "Work Tasks" tags-todo "+work-email")
-
-  ;; Low-effort next actions
-  ("e" tags-todo "+TODO=\"NEXT\"+Effort<15&+Effort>0"
-   ((org-agenda-overriding-header "Low Effort Tasks")
-    (org-agenda-max-todos 20)
-    (org-agenda-files org-agenda-files)))
-
-  ("w" "Workflow Status"
-   ((todo "WAIT"
-          ((org-agenda-overriding-header "Waiting on External")
-           (org-agenda-files org-agenda-files)))
-    (todo "REVIEW"
-          ((org-agenda-overriding-header "In Review")
-           (org-agenda-files org-agenda-files)))
-    (todo "PLAN"
-          ((org-agenda-overriding-header "In Planning")
-           (org-agenda-todo-list-sublevels nil)
-           (org-agenda-files org-agenda-files)))
-    (todo "BACKLOG"
-          ((org-agenda-overriding-header "Project Backlog")
-           (org-agenda-todo-list-sublevels nil)
-           (org-agenda-files org-agenda-files)))
-    (todo "READY"
-          ((org-agenda-overriding-header "Ready for Work")
-           (org-agenda-files org-agenda-files)))
-    (todo "ACTIVE"
-          ((org-agenda-overriding-header "Active Projects")
-           (org-agenda-files org-agenda-files)))
-    (todo "COMPLETED"
-          ((org-agenda-overriding-header "Completed Projects")
-           (org-agenda-files org-agenda-files)))
-    (todo "CANC"
-          ((org-agenda-overriding-header "Cancelled Projects")
-           (org-agenda-files org-agenda-files)))))))
+  ("W" "Work Tasks" tags-todo "+work-email")))
 
 (setq org-capture-templates
   `(("t" "Tasks / Projects")
@@ -232,14 +203,12 @@
   '((:startgroup)
      ; Put mutually exclusive tags here
      (:endgroup)
-     ("@errand" . ?E)
-     ("@home" . ?H)
-     ("@work" . ?W)
+     ("home" . ?H)
+     ("work" . ?W)
+     ("projects" . ?p)
      ("agenda" . ?a)
-     ("planning" . ?p)
-     ("publish" . ?P)
-     ("batch" . ?b)
-     ("note" . ?n)
+     ("email/admin" . ?e)
+     ("computing" . ?c)
      ("idea" . ?i)))
 
 (setq org-refile-targets
@@ -250,14 +219,14 @@
 (advice-add 'org-refile :after 'org-save-all-org-buffers)
 
 ;; Automatically tangle our Emacs.org config file when we save it
-    (defun efs/org-babel-tangle-config ()
+    (defun runemacs/org-babel-tangle-config ()
       (when (string-equal (file-name-directory (buffer-file-name))
                           (expand-file-name user-emacs-directory))
         ;; Dynamic scoping to the rescue
         (let ((org-confirm-babel-evaluate nil))
           (org-babel-tangle))))
 
-    (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'efs/org-babel-tangle-config)))
+    (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'runemacs/org-babel-tangle-config)))
 
   (with-eval-after-load 'org
     (org-babel-do-load-languages
@@ -288,23 +257,23 @@
 
 (use-package command-log-mode)
 
-(use-package which-key
-  :defer 0
-  :diminish which-key-mode
-  :config
-  (which-key-mode)
-  (setq which-key-idle-delay 1))
+;;  (use-package which-key
+    ;; :defer 0
+    ;; :diminish which-key-mode
+    ;; :config
+    ;; (which-key-mode)
+    ;; (setq which-key-idle-delay 1))
 
-(use-package helpful
-  :commands (helpful-callable helpful-variable helpful-command helpful-key)
-  :custom
-  (counsel-describe-function-function #'helpful-callable)
-  (counsel-describe-variable-function #'helpful-variable)
-  :bind
-  ([remap describe-function] . counsel-describe-function)
-  ([remap describe-command] . helpful-command)
-  ([remap describe-variable] . counsel-describe-variable)
-  ([remap describe-key] . helpful-key))
+  (use-package helpful
+    :commands (helpful-callable helpful-variable helpful-command helpful-key)
+    :custom
+    (counsel-describe-function-function #'helpful-callable)
+    (counsel-describe-variable-function #'helpful-variable)
+    :bind
+    ([remap describe-function] . counsel-describe-function)
+    ([remap describe-command] . helpful-command)
+    ([remap describe-variable] . counsel-describe-variable)
+    ([remap describe-key] . helpful-key))
 
 (use-package counsel
   :bind (("C-M-j" . 'counsel-switch-buffer)
@@ -443,13 +412,13 @@
       '((default "julia")  ; having trouble finding it for some reason.
         (master "/opt/julia-1.6.0/bin/julia"))) ; give some help
 
-(defun efs/lsp-mode-setup ()
+(defun runemacs/lsp-mode-setup ()
   (setq lsp-headerline-breadcrumb-segments '(path-up-to-project file symbols))
   (lsp-headerline-breadcrumb-mode))
 
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
-  :hook (lsp-mode . efs/lsp-mode-setup)
+  :hook (lsp-mode . runemacs/lsp-mode-setup)
   :init
   (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
   :config
