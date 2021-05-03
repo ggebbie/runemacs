@@ -141,6 +141,35 @@
 
   (eshell-git-prompt-use-theme 'powerline))
 
+(use-package dired
+       :ensure nil
+       :commands (dired dired-jump)
+       :bind (("C-x C-j" . dired-jump))
+       :custom ((dired-listing-switches "-agho --group-directories-first")))
+
+     (use-package dired-single
+       :commands (dired dired-jump))
+
+     (use-package all-the-icons-dired
+       :hook (dired-mode . all-the-icons-dired-mode))
+
+     (use-package dired-open
+       :commands (dired dired-jump)
+       :config
+       ;; Doesn't work as expected!
+       ;;(add-to-list 'dired-open-functions #'dired-open-xdg t)
+       (setq dired-open-extensions '(("png" . "feh")
+                                     ("mkv" . "mpv"))))
+
+     (use-package dired-hide-dotfiles
+       :hook (dired-mode . dired-hide-dotfiles-mode)
+       :bind (
+              :map dired-mode-map
+                   ("h" . dired-hide-dotfiles-mode)))
+
+;; gg maybe a better way to do this.
+;; (define-key dired-mode-map "h" 'dired-hide-dotfiles-mode)
+
 (defun runemacs/org-mode-setup ()
   (org-indent-mode)
   (variable-pitch-mode 1)
@@ -453,13 +482,19 @@
 
 (use-package julia-mode)
 
-(use-package julia-repl)
-(add-hook 'julia-mode-hook 'julia-repl-mode) ;; always use minor mode
+(use-package julia-repl
+  :ensure t
+  :commands julia-repl julia-repl-mode
+  :init (require 'julia-repl)
+  :config
+  (setq julia-repl-executable-records
+        '(
+          (default "julia")))
+         (load-library "julia-mode"))
 
-;; problem with flatpak, may not be necessary now
-(setq julia-repl-executable-records
-      '((default "julia")  ; having trouble finding it for some reason.
-        (master "/opt/julia-1.6.0/bin/julia"))) ; give some help
+        ;; (remote "ssh -t me@myhost /usr/bin/julia")
+
+(add-hook 'julia-mode-hook 'julia-repl-mode) ;; always use minor mode
 
 (defun runemacs/lsp-mode-setup ()
   (setq lsp-headerline-breadcrumb-segments '(path-up-to-project file symbols))
