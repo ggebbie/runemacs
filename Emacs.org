@@ -133,7 +133,6 @@ This is an example of using [[https://github.com/abo-abo/hydra][Hydra]] to desig
 
 #+end_src
 
-
 * Terminal modes
 
 *** term
@@ -318,7 +317,6 @@ Useful key bindings: (first two didn't seem to work for me)
   ;; (define-key dired-mode-map "h" 'dired-hide-dotfiles-mode)
 
 #+end_src
-
 
 * Org mode
 
@@ -507,7 +505,6 @@ See daviwil/emacs-from-scratch to get it back.
 ;;                                                      (:kernel . "julia-1.6")))
 
 #+end_src
-
 
 * Searching via Ivy and Counsel
 
@@ -866,5 +863,32 @@ Here I make my own keybindings in analogy to emacs point movement.
   (global-set-key (kbd "C-M-f") 'windmove-right)
   (global-set-key (kbd "C-M-p")    'windmove-up)
   (global-set-key (kbd "C-M-n")  'windmove-down)
+#+end_src
+
+
+* LaTex
+
+** My version of  JWeigly's config [[https://github.com/jwiegley/use-package/issues/379][issue #379 in use-package]]
+ multi-file document structure, LaTex packages support, in the setq variables
+#+begin_src emacs-lisp
+        (use-package tex-mode
+          :defer t
+          :ensure auctex                   ; auctex
+          :mode ("\\.tex\\'" . TeX-latex-mode)
+          :init
+          (setq reftex-plug-into-AUCTeX t)
+          (setq TeX-auto-save t)
+          (setq TeX-parse-self t)
+          (setq-default TeX-master nil)
+          (use-package ebib)
+          (add-hook 'LaTeX-mode-hook 'reftex-mode))
+
+      (add-hook 'plain-TeX-mode-hook
+                (lambda () (set (make-local-variable 'TeX-electric-math)
+                                (cons "$" "$"))))
+    (add-hook 'LaTeX-mode-hook
+              (lambda () (set (make-local-variable 'TeX-electric-math)
+                              (cons "\\(" "\\)"))))
+  (add-hook 'LaTeX-mode-hook 'turn-on-auto-fill)
 #+end_src
 

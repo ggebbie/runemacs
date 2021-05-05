@@ -563,3 +563,23 @@
 (global-set-key (kbd "C-M-f") 'windmove-right)
 (global-set-key (kbd "C-M-p")    'windmove-up)
 (global-set-key (kbd "C-M-n")  'windmove-down)
+
+(use-package tex-mode
+        :defer t
+        :ensure auctex                   ; auctex
+        :mode ("\\.tex\\'" . TeX-latex-mode)
+        :init
+        (setq reftex-plug-into-AUCTeX t)
+        (setq TeX-auto-save t)
+        (setq TeX-parse-self t)
+        (setq-default TeX-master nil)
+        (use-package ebib)
+        (add-hook 'LaTeX-mode-hook 'reftex-mode))
+
+    (add-hook 'plain-TeX-mode-hook
+              (lambda () (set (make-local-variable 'TeX-electric-math)
+                              (cons "$" "$"))))
+  (add-hook 'LaTeX-mode-hook
+            (lambda () (set (make-local-variable 'TeX-electric-math)
+                            (cons "\\(" "\\)"))))
+(add-hook 'LaTeX-mode-hook 'turn-on-auto-fill)
