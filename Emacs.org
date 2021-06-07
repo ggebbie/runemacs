@@ -21,7 +21,8 @@
   (defvar runemacs/default-variable-font-size 130)
 
   ;; Make frame transparency overridable
-  ;;  (defvar runemacs/frame-transparency '(90 . 90))
+  (defvar runemacs/frame-transparency '(90 . 80))
+;;  (defvar runemacs/frame-transparency-inactive '(80 . 80))
 
   (set-face-attribute 'default nil :font "Fira Code Retina" :height runemacs/default-font-size)
 
@@ -32,8 +33,8 @@
   (set-face-attribute 'variable-pitch nil :font "Cantarell" :height runemacs/default-variable-font-size :weight 'regular)
 
   ;; Set frame transparency
-  ;;  (set-frame-parameter (selected-frame) 'alpha runemacs/frame-transparency)
-  ;;  (add-to-list 'default-frame-alist `(alpha . ,runemacs/frame-transparency))
+  (set-frame-parameter (selected-frame) 'alpha runemacs/frame-transparency)
+  (add-to-list 'default-frame-alist `(alpha . ,runemacs/frame-transparency))
 
   ;; maximize frame
   (set-frame-parameter (selected-frame) 'fullscreen 'maximized)
@@ -87,7 +88,6 @@ easy keybinding configuation that integrates well with which-key
 #+begin_src emacs-lisp
 
   (use-package general
-      :after evil
       :config
       (general-create-definer runemacs/leader-keys
         :keymaps '(normal insert visual emacs)
@@ -195,11 +195,6 @@ Useful key bindings: (first two didn't seem to work for me)
 
     ;; Truncate buffer for performance
     (add-to-list 'eshell-output-filter-functions 'eshell-truncate-buffer)
-
-    ;; Bind some useful keys for evil-mode
-    ;;    (evil-define-key '(normal insert visual) eshell-mode-map (kbd "C-r") 'counsel-esh-history)
-    ;; (evil-define-key '(normal insert visual) eshell-mode-map (kbd "<home>") 'eshell-bol)
-    ;; (evil-normalize-keymaps)
 
     (setq eshell-history-size         10000
           eshell-buffer-maximum-lines 10000
@@ -317,6 +312,7 @@ Useful key bindings: (first two didn't seem to work for me)
   ;; (define-key dired-mode-map "h" 'dired-hide-dotfiles-mode)
 
 #+end_src
+
 
 * Org mode
 
@@ -575,31 +571,6 @@ See daviwil/emacs-from-scratch to get it back.
     (ivy-prescient-mode 1))
 #+end_src
 
-* Evil mode
-#+begin_src emacs-lisp
-
-(use-package evil
-  :init
-  (setq evil-want-integration t)
-  (setq evil-want-keybinding nil)
-  (setq evil-want-C-u-scroll t)
-  (setq evil-want-C-i-jump nil)
-  :config
-  (evil-mode 0)
-  (define-key evil-insert-state-map (kbd "C-g") 'evil-normal-state)
-  (define-key evil-insert-state-map (kbd "C-h") 'evil-delete-backward-char-and-join)
-;  Use visual line motions even outside of visual-line-mode buffers
-; (evil-global-set-key 'motion "j" 'evil-next-visual-line)
-; (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
- (evil-set-initial-state 'messages-buffer-mode 'normal)
- (evil-set-initial-state 'dashboard-mode 'normal))
-
-(use-package evil-collection
-  :after evil
-  :config
-  (evil-collection-init))
-#+end_src
-
 * Doom themes
 #+begin_src emacs-lisp
   ;; simplified mode line
@@ -652,10 +623,10 @@ See daviwil/emacs-from-scratch to get it back.
     ;; NOTE: Make sure to configure a GitHub token before using this package!
     ;; - https://magit.vc/manual/forge/Token-Creation.html#Token-Creation
     ;; - https://magit.vc/manual/ghub/Getting-Started.html#Getting-Started
-  (use-package forge
-    :after magit)
+;;  (use-package forge
+  ;;  :after magit)
 
-  (setq auth-sources '("~/.authinfo.gpg"))
+  ;;(setq auth-sources '("~/.authinfo.gpg"))
 
 #+end_src
 
@@ -865,7 +836,6 @@ Here I make my own keybindings in analogy to emacs point movement.
   (global-set-key (kbd "C-M-n")  'windmove-down)
 #+end_src
 
-
 * LaTex
 
 ** My version of  JWiegly's config [[https://github.com/jwiegley/use-package/issues/379][issue #379 in use-package]]
@@ -947,7 +917,7 @@ Here I make my own keybindings in analogy to emacs point movement.
 
 ;;    ;; test line next
     ;;
-    ;;(define-key 'LaTeX-mode-map "\C-cb" 'ebib-insert-citation))
+    ;;(define-key 'LaTeX-mode-map "\C-cb" 'ebib-insert-citation)
 
 conflict with C-M-j in ebib entry list (C-M-j is ivy-immediate-done, so it can't be used to switch buffers as defined by daviwil)
 
@@ -957,7 +927,151 @@ conflict with C-M-j in ebib entry list (C-M-j is ivy-immediate-done, so it can't
   ;;   (define-key ebib-multiline-mode-map
   ;;     "\C-c c" nil)
   ;;   (define-key ebib-multiline-mode-map
-  ;;     "\C-c | c" 'ebib-quit-multiline-buffer-and-save)
+  ;;     "\C-c | c" 'ebib-quit-multiline-buffer-and-save))
+
+#+end_src
+
+* Email
+
+** inital mu4e setup
+
+Add the initial =mu4e= configuration:
+
+*IMPORTANT NOTE*: As of mu4e 1.3.7, =mu4e-maildir-shortcuts= now has a new format!  Here is the equivalent:
+
+#+begin_src emacs-lisp
+
+
+  ;; (delete 'mu4e evil-collection-mode-list)
+  ;; (delete 'mu4e-conversation evil-collection-mode-list)
+
+  (use-package mu4e
+    :ensure nil
+    :load-path "/usr/share/emacs/site-lisp/mu4e/"
+    :defer 20 ; Wait until 20 seconds after startup
+    :config
+
+    ;; craft an email workflow in org mode
+    (require 'mu4e-org)
+
+    ;; This is set to 't' to avoid mail syncing issues when using mbsync
+    (setq mu4e-change-filenames-when-moving t)
+
+    ;; Refresh mail using isync every 10 minutes
+    (setq mu4e-update-interval (* 10 60))
+    (setq mu4e-get-mail-command "mbsync -a")
+    (setq mu4e-maildir "~/Mail")
+      ;; Make sure plain text mails flow correctly for recipients
+    (setq mu4e-compose-format-flowed t)
+
+    (setq mu4e-contexts
+          (list
+           ;; Work account
+           (make-mu4e-context
+            :name "Gmail"
+            :match-func
+              (lambda (msg)
+                (when msg
+                  (string-prefix-p "/Gmail" (mu4e-message-field msg :maildir))))
+            :vars '((user-mail-address . "jgebbie@whoi.edu")
+                    (user-full-name    . "Jake Gebbie")
+                    (smtpmail-smtp-server  . "smtp.gmail.com")
+                    (smtpmail-smtp-service . 465)
+                    (smtpmail-stream-type  . ssl)
+                    (mu4e-drafts-folder  . "/Gmail/[Gmail]/Drafts")
+                    (mu4e-sent-folder  . "/Gmail/[Gmail]/Sent Mail")
+                    (mu4e-refile-folder  . "/Gmail/[Gmail]/All Mail")
+                    (mu4e-trash-folder  . "/Gmail/[Gmail]/Trash")))))
+
+    ;; (setq org-capture-templates
+    ;;   `(("m" "Email Workflow")
+    ;;     ("mf" "Follow Up" entry (file+olp "~/org/Mail.org" "Follow Up")
+    ;;           "* TODO Follow up with %:fromname on %a\nSCHEDULED:%t\nDEADLINE: %(org-insert-time-stamp (org-read-date nil t \"+2d\"))\n\n%i")
+    ;;     ("mr" "Read Later" entry (file+olp "~/org/Mail.org" "Read Later")
+    ;;           "* TODO Read %:subject\nSCHEDULED:%t\nDEADLINE: %(org-insert-time-stamp (org-read-date nil t \"+2d\"))\n\n%a\n\n%i")))
+
+    (setq mu4e-maildir-shortcuts
+        '((:maildir "/Gmail/Inbox"    :key ?i)
+          (:maildir "/Gmail/[Gmail]/Sent Mail" :key ?s)
+          (:maildir "/Gmail/[Gmail]/Trash"     :key ?t)
+          (:maildir "/Gmail/[Gmail]/Drafts"    :key ?d)
+          (:maildir "/Gmail/[Gmail]/All Mail"  :key ?a)))
+
+    (setq mu4e-bookmarks
+          '((:name "Unread messages" :query "flag:unread AND NOT flag:trashed" :key ?i)
+            (:name "Today's messages" :query "date:today..now" :key ?t)
+            (:name "Last 7 days" :query "date:7d..now" :hide-unread t :key ?w)
+            (:name "Messages with images" :query "mime:image/*" :key ?p)
+            (:name "ocean" :query "to:ggebbie@whoi.edu OR to:jgebbie@whoi.edu" :key ?o)
+            (:name "gmail" :query "to:gebbie@gmail.com" :key ?g)))
+
+    ;; Run mu4e in background to sync mail 
+    (mu4e t))
+
+#+end_src
+
+More Gmail configuration tips: https://www.djcbsoftware.nl/code/mu/mu4e/Gmail-configuration.html
+
+** Multiple email accounts
+
+** Configuring SMTP
+
+SMTP is [[https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol][Simple Mail Transfer Protocol]], an old standard for connecting to a server to send email.
+
+Traditionally, SMTP servers run on port 25 without any kind of encryption.  These days, most will either use SSL or TLS, either of which may use different ports.
+
+- =smtpmail-smtp-server= - The host where we connect to send mail
+- =smtpmail-smtp-service= - The port number of the SMTP service (defaults to 25)
+- =smtpmail-stream-type= - Determines whether SSL or TLS should be used when connecting
+
+  
+** Configure the mail-sending function
+
+So that we don't get prompted about how mail should be sent, we will configure the =message-send-mail-function= variable to automatically call =smtpmail-send-it=:
+
+#+begin_src emacs-lisp
+
+    ;; Configure the function to use for sending mail
+    (setq message-send-mail-function 'smtpmail-send-it)
+
+#+end_src
+
+
+** Sending HTML mail
+
+We can use the [[https://github.com/org-mime/org-mime][org-mime]] package for this purpose:
+
+#+begin_src emacs-lisp
+
+  (use-package org-mime
+    :ensure t)
+
+#+end_src
+
+
+** Customizing the HTML export style
+
+As you might have noticed, the exported e-mail has section numbers for headings.  We can turn that off!
+
+We can also customize the styling of individual HTML elements inside of the message using =org-mime-html-hook=.  Here's an example of making all code blocks have a dark background and light text:
+
+You can easily add a hook to do this conversion for you automatically:
+Alternatively if you just want be reminded when you didn't use HTML, use =org-mime-confirm-when-no-multipart=:
+
+#+begin_src emacs-lisp
+
+  (setq org-mime-export-options '(:section-numbers nil
+                                  :with-author nil
+                                  :with-toc nil))
+
+  (add-hook 'org-mime-html-hook
+            (lambda ()
+              (org-mime-change-element-style
+              "pre" (format "color: %s; background-color: %s; padding: 0.5em;"
+                            "#E6E1DC" "#232323"))))
+
+
+  (add-hook 'message-send-hook 'org-mime-confirm-when-no-multipart)
 
 #+end_src
 
