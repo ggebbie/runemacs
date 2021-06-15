@@ -633,29 +633,32 @@ See daviwil/emacs-from-scratch to get it back.
 * Programming
 ** Rainbow delimiters
 #+begin_src emacs-lisp
-(use-package rainbow-delimiters
-  :hook (prog-mode . rainbow-delimiters-mode))
-#+end_src
+
+  (use-package rainbow-delimiters
+      :hook (prog-mode . rainbow-delimiters-mode))
+
+  #+end_src
+
 ** Matlab
 #+begin_src emacs-lisp
-(use-package matlab
-  :ensure matlab-mode
-  :config
-  (add-to-list
-   'auto-mode-alist
-   '("\\.m\\'" . matlab-mode))
-  (setq matlab-indent-function t)
-  (setq matlab-shell-command "matlab"))
+  (use-package matlab
+    :ensure matlab-mode
+    :config
+    (add-to-list
+     'auto-mode-alist
+     '("\\.m\\'" . matlab-mode))
+    (setq matlab-indent-function t)
+    (setq matlab-shell-command "matlab"))
 
-(setq matlab-indent-function-body t)  ; if you want function bodies indented
- (setq matlab-verify-on-save-flag nil) ; turn off auto-verify on save
- (defun my-matlab-mode-hook ()
-     (setq fill-column 76))              ; where auto-fill should wrap
- (add-hook 'matlab-mode-hook 'my-matlab-mode-hook)
+  (setq matlab-indent-function-body t)  ; if you want function bodies indented
+   (setq matlab-verify-on-save-flag nil) ; turn off auto-verify on save
+   (defun my-matlab-mode-hook ()
+       (setq fill-column 76))              ; where auto-fill should wrap
+   (add-hook 'matlab-mode-hook 'my-matlab-mode-hook)
 
- (defun my-matlab-shell-mode-hook ()
-   '())
- (add-hook 'matlab-shell-mode-hook 'my-matlab-shell-mode-hook)
+   (defun my-matlab-shell-mode-hook ()
+     '())
+   (add-hook 'matlab-shell-mode-hook 'my-matlab-shell-mode-hook)
 #+end_src
 
 ** Julia
@@ -842,23 +845,24 @@ Here I make my own keybindings in analogy to emacs point movement.
  multi-file document structure, LaTex packages support, in the setq variables
 #+begin_src emacs-lisp
 
-  (use-package tex-mode
-    :defer t
-    :ensure auctex                   ; auctex
-    :mode ("\\.tex\\'" . TeX-latex-mode)
-    :init
-    (setq reftex-plug-into-AUCTeX t)
-    (setq TeX-auto-save t)
-    (setq TeX-parse-self t)
-    (setq-default TeX-master nil)
-    (add-hook 'LaTeX-mode-hook 'reftex-mode)
-    (add-hook 'plain-TeX-mode-hook
-              (lambda () (set (make-local-variable 'TeX-electric-math)
-                              (cons "$" "$"))))
-    (add-hook 'LaTeX-mode-hook
-              (lambda () (set (make-local-variable 'TeX-electric-math)
-                              (cons "$" "$"))))
-    (add-hook 'LaTeX-mode-hook 'turn-on-auto-fill))
+      (use-package tex-mode
+        :defer t
+        :ensure auctex                   ; auctex
+        :mode ("\\.tex\\'" . TeX-latex-mode)
+        :init
+        (setq reftex-plug-into-AUCTeX t)
+        (setq TeX-auto-save t)
+        (setq TeX-parse-self t)
+        (setq-default TeX-master nil)
+        (add-hook 'LaTeX-mode-hook 'reftex-mode)
+        (add-hook 'plain-TeX-mode-hook
+                  (lambda () (set (make-local-variable 'TeX-electric-math)
+                                  (cons "$" "$"))))
+        (add-hook 'LaTeX-mode-hook
+                  (lambda () (set (make-local-variable 'TeX-electric-math)
+                                  (cons "$" "$"))))
+        (add-hook 'LaTeX-mode-hook 'turn-on-auto-fill)
+        )
 
     (setq bibtex-autokey-titleword-length 12)
     (setq bibtex-autokey-year-length 4)
@@ -871,65 +875,69 @@ Here I make my own keybindings in analogy to emacs point movement.
     (setq  bibtex-autokey-year-title-separator ":")
     (setq  bibtex-autokey-names 2)
 
-  (use-package ebib
-    :init
-    (global-set-key (kbd "C-c e") 'ebib)
-    :custom
-    (ebib-bib-search-dirs '("home/gebbie/texmf/bibtex/bib/"))
-    (ebib-preload-bib-files '("/home/gebbie/texmf/bibtex/bib/main.bib"))
-    (ebib-use-timestamp t)
-    (ebib-citation-commands '((latex-mode
-                                       (("cite"   "\\cite%<[%A]%>[%A]{%(%K%,)}")
-                                        ("citep"   "\\citep%<[%A]%>[%A]{%(%K%,)}")
-                                        ("citet"   "\\citet%<[%A]%>[%A]{%(%K%,)}")
-                                        ("citeps"   "\\citep{%K}")
-                                        ("citets"   "\\citet{%K}")
-                                        ("paren" "\\parencite%<[%A]%>[%A]{%(%K%,)}")
-                                        ("foot" "\\footcite%<[%A]%>[%A]{%(%K%,)}")
-                                        ("text" "\\textcite%<[%A]%>[%A]{%(%K%,)}")
-                                        ("smart" "\\smartcite%<[%A]%>[%A]{%(%K%,)}")
-                                        ("super" "\\supercite{%K}")
-                                        ("auto" "\\autocite%<[%A]%>[%A]{%(%K%,)}")
-                                        ("cites" "\\cites%<(%A)%>(%A)%(%<[%A]%>[%A]{%K}%)")
-                                        ("parens" "\\parencites%<(%A)%>(%A)%(%<[%A]%>[%A]{%K}%)")
-                                        ("foots" "\\footcites%<(%A)%>(%A)%(%<[%A]%>[%A]{%K}%)")
-                                        ("texts" "\\textcites%<(%A)%>(%A)%(%<[%A]%>[%A]{%K}%)")
-                                        ("smarts" "\\smartcites%<(%A)%>(%A)%(%<[%A]%>[%A]{%K}%)")
-                                        ("supers" "\\supercites%<(%A)%>(%A)%(%<[%A]%>[%A]{%K}%)")
-                                        ("autos" "\\autoscites%<(%A)%>(%A)%(%<[%A]%>[%A]{%K}%)")
-                                        ("author" "\\citeauthor%<[%A]%>[%A]{%(%K%,)}")
-                                        ("title" "\\citetitle%<[%A]%>[%A]{%(%K%,)}")
-                                        ("year" "\\citeyear%<[%A]%>[%A][%A]{%K}")
-                                        ("date" "\\citedate%<[%A]%>[%A]{%(%K%,)}")
-                                        ("full" "\\fullcite%<[%A]%>[%A]{%(%K%,)}")))
-                              (org-mode
-                               (("ebib" "[[ebib:%K][%D]]")))
-                              (markdown-mode
-                               (("text" "@%K%< [%A]%>")
-                                ("paren" "[%(%<%A %>@%K%<, %A%>%; )]")
-                                ("year" "[-@%K%< %A%>]")))
-                              )))
+    ;; fix error in ebib documentation by removing mark before LaTex
+  ;;  (with-eval-after-load 'tex-mode
+    ;;   (define-key LaTeX-mode-map "\C-cb" 'ebib-insert-citation))  
 
-
-                                
+      (use-package ebib
+        :init
+        (global-set-key (kbd "C-c e") 'ebib)
+        :bind (
+        :map LaTeX-mode-map
+               ("C-c b" . ebib-insert-citation))
+        :custom
+        (ebib-bib-search-dirs '("home/gebbie/texmf/bibtex/bib/"))
+        (ebib-preload-bib-files '("/home/gebbie/texmf/bibtex/bib/main.bib"))
+        (ebib-use-timestamp t)
+        (ebib-citation-commands '((latex-mode
+                                           (("cite"   "\\cite%<[%A]%>[%A]{%(%K%,)}")
+                                            ("citep"   "\\citep%<[%A]%>[%A]{%(%K%,)}")
+                                            ("citet"   "\\citet%<[%A]%>[%A]{%(%K%,)}")
+                                            ("citeps"   "\\citep{%K}")
+                                            ("citets"   "\\citet{%K}")
+                                            ("apacite"   "\\cite{%K}")
+                                            ("apacitelong"   "\\cite%<<%A>%>[%A]{%(%K%,)}")
+                                            ("apaciteA"   "\\citeA{%K}")
+                                            ("paren" "\\parencite%<[%A]%>[%A]{%(%K%,)}")
+                                            ("foot" "\\footcite%<[%A]%>[%A]{%(%K%,)}")
+                                            ("text" "\\textcite%<[%A]%>[%A]{%(%K%,)}")
+                                            ("smart" "\\smartcite%<[%A]%>[%A]{%(%K%,)}")
+                                            ("super" "\\supercite{%K}")
+                                            ("auto" "\\autocite%<[%A]%>[%A]{%(%K%,)}")
+                                            ("cites2" "\\cites%<(%A)%>(%A)%(%<[%A]%>[%A]{%K}%)")
+                                            ("parens" "\\parencites%<(%A)%>(%A)%(%<[%A]%>[%A]{%K}%)")
+                                            ("foots" "\\footcites%<(%A)%>(%A)%(%<[%A]%>[%A]{%K}%)")
+                                            ("texts" "\\textcites%<(%A)%>(%A)%(%<[%A]%>[%A]{%K}%)")
+                                            ("smarts" "\\smartcites%<(%A)%>(%A)%(%<[%A]%>[%A]{%K}%)")
+                                            ("supers" "\\supercites%<(%A)%>(%A)%(%<[%A]%>[%A]{%K}%)")
+                                            ("autos" "\\autoscites%<(%A)%>(%A)%(%<[%A]%>[%A]{%K}%)")
+                                            ("author" "\\citeauthor%<[%A]%>[%A]{%(%K%,)}")
+                                            ("title" "\\citetitle%<[%A]%>[%A]{%(%K%,)}")
+                                            ("year" "\\citeyear%<[%A]%>[%A][%A]{%K}")
+                                            ("date" "\\citedate%<[%A]%>[%A]{%(%K%,)}")
+                                            ("full" "\\fullcite%<[%A]%>[%A]{%(%K%,)}")))
+                                  (org-mode
+                                   (("ebib" "[[ebib:%K][%D]]")))
+                                  (markdown-mode
+                                   (("text" "@%K%< [%A]%>")
+                                    ("paren" "[%(%<%A %>@%K%<, %A%>%; )]")
+                                    ("year" "[-@%K%< %A%>]")))
+                                  )))
 
 #+end_src
-
-;;    ;; test line next
-    ;;
-    ;;(define-key 'LaTeX-mode-map "\C-cb" 'ebib-insert-citation)
 
 conflict with C-M-j in ebib entry list (C-M-j is ivy-immediate-done, so it can't be used to switch buffers as defined by daviwil)
 
-#+begin_src emacs-lisp
+;;#+begin_src emacs-lisp
 
-  ;; (with-eval-after-load 'ebib
-  ;;   (define-key ebib-multiline-mode-map
-  ;;     "\C-c c" nil)
-  ;;   (define-key ebib-multiline-mode-map
-  ;;     "\C-c | c" 'ebib-quit-multiline-buffer-and-save))
+   ;;(with-eval-after-load 'auctex
+     ;;(define-key LaTeX-mode-map "\C-cb" 'ebib-insert-citation))  
+;;       (define-key ebib-multiline-mode-map
+  ;;       "\C-c c" nil)
+    ;;   (define-key ebib-multiline-mode-map
+      ;;   "\C-c | c" 'ebib-quit-multiline-buffer-and-save))
 
-#+end_src
+;;#+end_src
 
 * Email
 
