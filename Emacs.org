@@ -457,49 +457,48 @@ See daviwil/emacs-from-scratch to get it back.
   (advice-add 'org-refile :after 'org-save-all-org-buffers)
 #+end_src
 
+** Org-babel-jupyter
+#+begin_src emacs-lisp
+  ;; (use-package jupyter)
+  ;;  (setq org-babel-default-header-args:jupyter-julia '((:async . "yes")
+  ;;                                                      (:session . "jl")
+  ;;                                                      (:kernel . "julia-1.6")))
+ ;; (org-babel-do-load-languages
+   ;;'org-babel-load-languages
+  ;; '((emacs-lisp . t)
+  ;;   (jupyter . t)))
+#+end_src
+
 ** Org-babel
 
 #+begin_src emacs-lisp
-    ;; Automatically tangle our Emacs.org config file when we save it
-    (defun runemacs/org-babel-tangle-config ()
-      (when (string-equal (file-name-directory (buffer-file-name))
-                          (expand-file-name user-emacs-directory))
-        ;; Dynamic scoping to the rescue
-        (let ((org-confirm-babel-evaluate nil))
-          (org-babel-tangle))))
+      ;; Automatically tangle our Emacs.org config file when we save it
+      (defun runemacs/org-babel-tangle-config ()
+        (when (string-equal (file-name-directory (buffer-file-name))
+                            (expand-file-name user-emacs-directory))
+          ;; Dynamic scoping to the rescue
+          (let ((org-confirm-babel-evaluate nil))
+            (org-babel-tangle))))
 
-    (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'runemacs/org-babel-tangle-config)))
+      (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'runemacs/org-babel-tangle-config)))
 
-  (with-eval-after-load 'org
-    (org-babel-do-load-languages
-    'org-babel-load-languages
-   '((emacs-lisp . t)
-;;       (matlab . t)
-;;       (julia . t)
-       (python . t)))
+    (with-eval-after-load 'org
+      (org-babel-do-load-languages
+      'org-babel-load-languages
+     '((emacs-lisp . t)))
+     ;;    (matlab . t)))
+      (push '("conf-unix" . conf-unix) org-src-lang-modes))
 
-    (push '("conf-unix" . conf-unix) org-src-lang-modes))
+    (setq org-confirm_babel-evaluate nil)
 
-  (setq org-confirm_babel-evaluate nil)
+    (with-eval-after-load 'org
+      ;; This is needed as of Org 9.2
+      (require 'org-tempo)
 
-  (with-eval-after-load 'org
-    ;; This is needed as of Org 9.2
-    (require 'org-tempo)
-
-    (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
-    (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
-    (add-to-list 'org-structure-template-alist '("py" . "src python"))
-    (add-to-list 'org-structure-template-alist '("ma" . "src matlab")))
-#+end_src
-
-** Org-babel-jupyter
-#+begin_src emacs-lisp
-;;    (use-package jupyter)
-
-;;  (setq org-babel-default-header-args:jupyter-julia '((:async . "yes")
-;;                                                      (:session . "jl")
-;;                                                      (:kernel . "julia-1.6")))
-
+      (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
+      (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+      (add-to-list 'org-structure-template-alist '("py" . "src python"))
+      (add-to-list 'org-structure-template-alist '("ma" . "src matlab")))
 #+end_src
 
 * Searching via Ivy and Counsel
@@ -928,7 +927,6 @@ conflict with C-M-j in ebib entry list (C-M-j is ivy-immediate-done, so it can't
 ;;#+begin_src emacs-lisp
 
    ;;(with-eval-after-load 'auctex
-     ;;(define-key LaTeX-mode-map "\C-cb" 'ebib-insert-citation))  
 ;;       (define-key ebib-multiline-mode-map
   ;;       "\C-c c" nil)
     ;;   (define-key ebib-multiline-mode-map
@@ -940,18 +938,25 @@ conflict with C-M-j in ebib entry list (C-M-j is ivy-immediate-done, so it can't
 
 #+begin_src emacs-lisp
 
-  (use-package biblio
-          :after ebib)
+     (use-package biblio
+             :after ebib)
 
-  (with-eval-after-load 'ebib
-  (require 'ebib-biblio)
-  (define-key biblio-selection-mode-map (kbd "e") #'ebib-biblio-selection-import))
+   (setq biblio-bibtex-use-autokey t)
 
-    ;;  (use-package ebib-biblio
-      ;;  :after (ebib biblio)
-        ;;:bind (:map biblio-selection-mode-map
-          ;;          ("e" . ebib-biblio-selection-import))
-    ;;    :demand t)
+  ;; being polite with CrossRef and getting faster response
+  (setq biblio-crossref-user-email-address "ggebbie@whoi.edu")
+
+     (with-eval-after-load 'ebib
+     (require 'ebib-biblio)
+     (define-key biblio-selection-mode-map (kbd "e") #'ebib-biblio-selection-import))
+
+       ;; Didn't work because ebib-biblio not a repository package
+       ;; straight.el could fix it, but i'm not using it
+       ;;  (use-package ebib-biblio
+         ;;  :after (ebib biblio)
+           ;;:bind (:map biblio-selection-mode-map
+             ;;          ("e" . ebib-biblio-selection-import))
+       ;;    :demand t)
 
 #+end_src
 
@@ -964,10 +969,6 @@ Add the initial =mu4e= configuration:
 *IMPORTANT NOTE*: As of mu4e 1.3.7, =mu4e-maildir-shortcuts= now has a new format!  Here is the equivalent:
 
 #+begin_src emacs-lisp
-
-
-  ;; (delete 'mu4e evil-collection-mode-list)
-  ;; (delete 'mu4e-conversation evil-collection-mode-list)
 
   (use-package mu4e
     :ensure nil
@@ -988,6 +989,8 @@ Add the initial =mu4e= configuration:
       ;; Make sure plain text mails flow correctly for recipients
     (setq mu4e-compose-format-flowed t)
 
+     ;; gg added this one
+    (setq mu4e-compose-dont-reply-to-self t)
     (setq mu4e-contexts
           (list
            ;; Work account
@@ -1061,7 +1064,7 @@ So that we don't get prompted about how mail should be sent, we will configure t
 #+end_src
 
 
-** Sending HTML mail
+** Sending HTML mail with org-mime
 
 We can use the [[https://github.com/org-mime/org-mime][org-mime]] package for this purpose:
 
@@ -1096,6 +1099,27 @@ Alternatively if you just want be reminded when you didn't use HTML, use =org-mi
 
 
   (add-hook 'message-send-hook 'org-mime-confirm-when-no-multipart)
+
+#+end_src
+
+** send HTML email with org-msg
+
+#+begin_src emacs-lisp
+
+      ;; (delete 'mu4e evil-collection-mode-list)
+      ;; (delete 'mu4e-conversation evil-collection-mode-list)
+
+  (use-package org-msg
+    :after mu4e
+    :config
+    (setq mail-user-agent 'mu4e-user-agent)
+    (org-msg-mode)
+    (setq org-msg-recipient-names '(("jgebbie@whoi.edu"  . "Jake Gebbie"))
+    org-msg-greeting-name-limit 3
+    org-msg-default-alternatives '((new . (text html))
+                                   (reply-to-html	. (text html))
+                                   (reply-to-text	. (text)))
+    org-msg-convert-citation t))
 
 #+end_src
 
