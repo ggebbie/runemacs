@@ -485,8 +485,8 @@ See daviwil/emacs-from-scratch to get it back.
     (with-eval-after-load 'org
       (org-babel-do-load-languages
       'org-babel-load-languages
-     '((emacs-lisp . t)))
-     ;;    (matlab . t)))
+     '((emacs-lisp . t)
+       (matlab . t)))
       (push '("conf-unix" . conf-unix) org-src-lang-modes))
 
     (setq org-confirm_babel-evaluate nil)
