@@ -445,26 +445,6 @@ See daviwil/emacs-from-scratch to get it back.
        ;;"| %U | %^{Weight} | %^{Notes} |" :kill-buffer t)
       ))
 
-  (defun runemacs/capture-mail-follow-up (msg)
-    (interactive)
-    (call-interactively 'org-store-link)
-    (org-capture nil "mf"))
-
-  (defun runemacs/capture-mail-read-later (msg)
-    (interactive)
-    (call-interactively 'org-store-link)
-    (org-capture nil "mr"))
-
-  ;; Add custom actions for our capture templates
-  (add-to-list 'mu4e-headers-actions
-    '("follow up" . runemacs/capture-mail-follow-up) t)
-  (add-to-list 'mu4e-view-actions
-    '("follow up" . runemacs/capture-mail-follow-up) t)
-  (add-to-list 'mu4e-headers-actions
-    '("read later" . runemacs/capture-mail-read-later) t)
-  (add-to-list 'mu4e-view-actions
-    '("read later" . runemacs/capture-mail-read-later) t)
-
   (setq org-tag-alist
     '((:startgroup)
        ; Put mutually exclusive tags here
@@ -1038,12 +1018,25 @@ Add the initial =mu4e= configuration:
                     (mu4e-refile-folder  . "/Gmail/[Gmail]/All Mail")
                     (mu4e-trash-folder  . "/Gmail/[Gmail]/Trash")))))
 
-    ;; (setq org-capture-templates
-    ;;   `(("m" "Email Workflow")
-    ;;     ("mf" "Follow Up" entry (file+olp "~/org/Mail.org" "Follow Up")
-    ;;           "* TODO Follow up with %:fromname on %a\nSCHEDULED:%t\nDEADLINE: %(org-insert-time-stamp (org-read-date nil t \"+2d\"))\n\n%i")
-    ;;     ("mr" "Read Later" entry (file+olp "~/org/Mail.org" "Read Later")
-    ;;           "* TODO Read %:subject\nSCHEDULED:%t\nDEADLINE: %(org-insert-time-stamp (org-read-date nil t \"+2d\"))\n\n%a\n\n%i")))
+  (defun runemacs/capture-mail-follow-up (msg)
+    (interactive)
+    (call-interactively 'org-store-link)
+    (org-capture nil "mf"))
+
+  (defun runemacs/capture-mail-read-later (msg)
+    (interactive)
+    (call-interactively 'org-store-link)
+    (org-capture nil "mr"))
+
+  ;; Add custom actions for our capture templates
+    (add-to-list 'mu4e-headers-actions
+                 '("follow up" . runemacs/capture-mail-follow-up) t)
+    (add-to-list 'mu4e-view-actions
+                 '("follow up" . runemacs/capture-mail-follow-up) t)
+    (add-to-list 'mu4e-headers-actions
+                 '("read later" . runemacs/capture-mail-read-later) t)
+    (add-to-list 'mu4e-view-actions
+                 '("read later" . runemacs/capture-mail-read-later) t)
 
     (setq mu4e-maildir-shortcuts
         '((:maildir "/Gmail/Inbox"    :key ?i)
