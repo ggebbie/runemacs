@@ -433,9 +433,37 @@ See daviwil/emacs-from-scratch to get it back.
       ("we" "Checking Email" entry (file+olp+datetree "~/.emacs.d/OrgFiles/Journal.org")
            "* Checking Email :email:\n\n%?" :clock-in :clock-resume :empty-lines 1)
 
-      ("m" "Metrics Capture")
-      ("mw" "Weight" table-line (file+headline "~/.emacs.d/OrgFiles/Metrics.org" "Weight")
-       "| %U | %^{Weight} | %^{Notes} |" :kill-buffer t)))
+      ("m" "Email Workflow")
+      ("mf" "Follow Up" entry (file+olp "~/.emacs.d/OrgFiles/Mail.org" "Follow Up")
+              "* TODO %:fromname re %a\n\n %i"
+              :immediate-finish t)
+      ("mr" "Read Later" entry (file+olp "~/.emacs.d/OrgFiles/Mail.org" "Read Later")
+              "* TODO %:fromname re %a\n\n %i"
+              :immediate-finish t)
+      ;;("m" "Metrics Capture")
+     ;; ("mw" "Weight" table-line (file+headline "~/.emacs.d/OrgFiles/Metrics.org" "Weight")
+       ;;"| %U | %^{Weight} | %^{Notes} |" :kill-buffer t)
+      ))
+
+  (defun runemacs/capture-mail-follow-up (msg)
+    (interactive)
+    (call-interactively 'org-store-link)
+    (org-capture nil "mf"))
+
+  (defun runemacs/capture-mail-read-later (msg)
+    (interactive)
+    (call-interactively 'org-store-link)
+    (org-capture nil "mr"))
+
+  ;; Add custom actions for our capture templates
+  (add-to-list 'mu4e-headers-actions
+    '("follow up" . runemacs/capture-mail-follow-up) t)
+  (add-to-list 'mu4e-view-actions
+    '("follow up" . runemacs/capture-mail-follow-up) t)
+  (add-to-list 'mu4e-headers-actions
+    '("read later" . runemacs/capture-mail-read-later) t)
+  (add-to-list 'mu4e-view-actions
+    '("read later" . runemacs/capture-mail-read-later) t)
 
   (setq org-tag-alist
     '((:startgroup)
