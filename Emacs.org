@@ -217,9 +217,7 @@ Useful key bindings: (first two didn't seem to work for me)
 #+end_src
 
 * File management
-
 ** Dired
-
 *** Key Bindings
 
 **** Navigation
@@ -280,7 +278,9 @@ Useful key bindings: (first two didn't seem to work for me)
 
 *** Configuration
 
+*NOTE*:  the first time on a new machine, must run `M-x all-the-icons-install-fonts` to get the icons to show up correctly.
 #+begin_src emacs-lisp
+       ;;(use-package all-the-icons)
 
        (use-package dired
          :ensure nil
@@ -291,6 +291,7 @@ Useful key bindings: (first two didn't seem to work for me)
        (use-package dired-single
          :commands (dired dired-jump))
 
+  
        (use-package all-the-icons-dired
          :hook (dired-mode . all-the-icons-dired-mode))
 
@@ -312,7 +313,6 @@ Useful key bindings: (first two didn't seem to work for me)
   ;; (define-key dired-mode-map "h" 'dired-hide-dotfiles-mode)
 
 #+end_src
-
 
 * Org mode
 
@@ -589,10 +589,10 @@ See daviwil/emacs-from-scratch to get it back.
   (use-package doom-themes
     :init (load-theme 'doom-palenight t))
 
-  (use-package all-the-icons)
+;;  (use-package all-the-icons)
 
-  (use-package all-the-icons-dired
-    :hook (dired-mode . all-the-icons-dired-mode))
+  ;;(use-package all-the-icons-dired
+   ;; :hook (dired-mode . all-the-icons-dired-mode))
 #+end_src
 
 * Project management
