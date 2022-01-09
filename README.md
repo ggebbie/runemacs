@@ -21,3 +21,5 @@ For ubuntu users, the first startup  will not be complete unless a few fonts pac
 
 The emacs directory editor "dired" uses some fancy icons. It appears that they need to be manually installed. In an open emacs session, invoke the command:
 `M-x all-the-icons-install-fonts`
+
+Emacs frequently relies upon the Control key. I recommend using the left Control with right-hand keys, and vice versa. The left Control is more ergonomic if remapped to the Caps Lock key. Ideally, shift-CapsLock could retain the CapsLock function.   
