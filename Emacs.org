@@ -670,24 +670,34 @@ See daviwil/emacs-from-scratch to get it back.
 
 ** Julia
 #+begin_src emacs-lisp
-  (use-package julia-mode)
+    (use-package julia-mode)
 
-  (use-package julia-repl
-    :ensure t
-    :commands julia-repl julia-repl-mode
-    :init (require 'julia-repl)
-    :config
-    (setq julia-repl-executable-records
-          '(
-            (default "julia")))
-           (load-library "julia-mode"))
+    (use-package julia-repl
+      :ensure t
+      :commands julia-repl julia-repl-mode
+      :init (require 'julia-repl)
+      :config
+      (setq julia-repl-executable-records
+            '(
+              (default "julia")))
+             (load-library "julia-mode"))
 
-          ;; (remote "ssh -t me@myhost /usr/bin/julia")
+            ;; (remote "ssh -t me@myhost /usr/bin/julia")
 
-  (add-hook 'julia-mode-hook 'julia-repl-mode) ;; always use minor mode
-
+    (add-hook 'julia-mode-hook 'julia-repl-mode) ;; always use minor mode
+    (julia-repl-set-terminal-backend 'vterm)
+    (setq vterm-kill-buffer-on-exit nil)
 #+end_src
 
+** Try out julia-snail
+
+#+begin_src emacs-lisp
+;(use-package julia-snail
+;  :ensure t
+;  :requires vterm
+;  :hook (julia-mode . julia-snail-mode))
+#+end_src 
+  
 * Languages
 *** IDE Features with lsp-mode
 
