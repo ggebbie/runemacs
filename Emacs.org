@@ -21,7 +21,8 @@
   (defvar runemacs/default-variable-font-size 130)
 
   ;; Make frame transparency overridable
-  (defvar runemacs/frame-transparency '(90 . 80))
+  (defvar runemacs/frame-transparency '(100 . 90))
+;;  (defvar runemacs/frame-transparency '(90 . 80))
 ;;  (defvar runemacs/frame-transparency-inactive '(80 . 80))
 
   (set-face-attribute 'default nil :font "Fira Code Retina" :height runemacs/default-font-size)
@@ -587,7 +588,8 @@ See daviwil/emacs-from-scratch to get it back.
 
   ;; I pick palenight below
   (use-package doom-themes
-    :init (load-theme 'doom-palenight t))
+    :init (load-theme 'doom-one t))
+;;    :init (load-theme 'doom-palenight t))
 
 ;;  (use-package all-the-icons)
 
