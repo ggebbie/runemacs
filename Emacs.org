@@ -85,10 +85,12 @@ perhaps needs to be after package manager?
 **  General
 
 easy keybinding configuation that integrates well with which-key
+Note: there may be a conflict with evil-mode here, should be after evil.
 
 #+begin_src emacs-lisp
 
   (use-package general
+      :after evil
       :config
       (general-create-definer runemacs/leader-keys
         :keymaps '(normal insert visual emacs)
@@ -281,37 +283,34 @@ Useful key bindings: (first two didn't seem to work for me)
 
 *NOTE*:  the first time on a new machine, must run `M-x all-the-icons-install-fonts` to get the icons to show up correctly.
 #+begin_src emacs-lisp
-       ;;(use-package all-the-icons)
+    (use-package all-the-icons)
 
-       (use-package dired
-         :ensure nil
-         :commands (dired dired-jump)
-         :bind (("C-x C-j" . dired-jump))
-         :custom ((dired-listing-switches "-agho --group-directories-first")))
+    (use-package dired
+      :ensure nil
+      :commands (dired dired-jump)
+      :bind (("C-x C-j" . dired-jump))
+      :custom ((dired-listing-switches "-agho --group-directories-first")))
 
-       (use-package dired-single
-         :commands (dired dired-jump))
+    (use-package dired-single
+      :commands (dired dired-jump))
 
-  
-       (use-package all-the-icons-dired
-         :hook (dired-mode . all-the-icons-dired-mode))
+    (use-package all-the-icons-dired
+;;      :after matlab
+      :hook (dired-mode . all-the-icons-dired-mode))
 
-       (use-package dired-open
-         :commands (dired dired-jump)
-         :config
-         ;; Doesn't work as expected!
-         ;;(add-to-list 'dired-open-functions #'dired-open-xdg t)
-         (setq dired-open-extensions '(("png" . "feh")
-                                       ("mkv" . "mpv"))))
+    (use-package dired-open
+      :commands (dired dired-jump)
+      :config
+      ;; Doesn't work as expected!
+      ;;(add-to-list 'dired-open-functions #'dired-open-xdg t)
+      (setq dired-open-extensions '(("png" . "feh")
+                                    ("mkv" . "mpv"))))
 
-       (use-package dired-hide-dotfiles
-         :hook (dired-mode . dired-hide-dotfiles-mode)
-         :bind (
-                :map dired-mode-map
-                     ("h" . dired-hide-dotfiles-mode)))
-		    
-  ;; gg maybe a better way to do this.
-  ;; (define-key dired-mode-map "h" 'dired-hide-dotfiles-mode)
+    (use-package dired-hide-dotfiles
+      :hook (dired-mode . dired-hide-dotfiles-mode)
+      :bind (
+             :map dired-mode-map
+             ("h" . dired-hide-dotfiles-mode)))
 
 #+end_src
 
@@ -620,10 +619,6 @@ Switched off by default. Change to (evil-mode 1) below.
     :init (load-theme 'doom-one t))
 ;;    :init (load-theme 'doom-palenight t))
 
-;;  (use-package all-the-icons)
-
-  ;;(use-package all-the-icons-dired
-   ;; :hook (dired-mode . all-the-icons-dired-mode))
 #+end_src
 
 * Project management
@@ -689,14 +684,18 @@ Switched off by default. Change to (evil-mode 1) below.
     (setq matlab-shell-command "matlab"))
 
   (setq matlab-indent-function-body t)  ; if you want function bodies indented
-   (setq matlab-verify-on-save-flag nil) ; turn off auto-verify on save
-   (defun my-matlab-mode-hook ()
-       (setq fill-column 76))              ; where auto-fill should wrap
-   (add-hook 'matlab-mode-hook 'my-matlab-mode-hook)
+  (setq matlab-verify-on-save-flag nil) ; turn off auto-verify on save
+  (defun my-matlab-mode-hook ()
+    (setq fill-column 76))              ; where auto-fill should wrap
+  (add-hook 'matlab-mode-hook 'my-matlab-mode-hook)
 
-   (defun my-matlab-shell-mode-hook ()
-     '())
-   (add-hook 'matlab-shell-mode-hook 'my-matlab-shell-mode-hook)
+  (defun my-matlab-shell-mode-hook ()
+    '())
+  (add-hook 'matlab-shell-mode-hook 'my-matlab-shell-mode-hook)
+
+  ;; all-the-icons modeline is incorrect
+  (add-to-list `all-the-icons-icon-alist `("\\.m$" all-the-icons-fileicon "matlab" :face all-the-icons-orange))
+
 #+end_src
 
 ** Julia
@@ -812,19 +811,19 @@ We also use [[https://github.com/sebastiencs/company-box][company-box]] to furth
 
 #+begin_src emacs-lisp
 
-;;  (use-package company
-  ;;  :after lsp-mode
-;;    :hook (lsp-mode . company-mode)
-;;    :bind (:map company-active-map
-;;           ("<tab>" . company-complete-selection))
-;;          (:map lsp-mode-map
-;;           ("<tab>" . company-indent-or-complete-common))
-;;    :custom
-;;    (company-minimum-prefix-length 1)
-;;    (company-idle-delay 0.0))
+   (use-package company
+     :after lsp-mode
+     :hook (lsp-mode . company-mode)
+     :bind (:map company-active-map
+            ("<tab>" . company-complete-selection))
+           (:map lsp-mode-map
+            ("<tab>" . company-indent-or-complete-common))
+     :custom
+     (company-minimum-prefix-length 1)
+     (company-idle-delay 0.0))
 
-;;  (use-package company-box
-;;    :hook (company-mode . company-box-mode))
+   (use-package company-box
+     :hook (company-mode . company-box-mode))
 
 #+end_src
 
