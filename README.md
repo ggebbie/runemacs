@@ -1,5 +1,7 @@
 # runemacs
-Emacs configuration following daviwil/emacs-from-scratch
+A vanilla emacs configuration following daviwil/emacs-from-scratch with some additions for scientific computing
+
+* Installation
 
 `git clone https://github.com/ggebbie/runemacs` 
 
@@ -22,6 +24,7 @@ For ubuntu users, the first startup  will not be complete unless a few fonts pac
 The emacs directory editor "dired" uses some fancy icons. It appears that they need to be manually installed. In an open emacs session, invoke the command:
 `M-x all-the-icons-install-fonts`
 
+* Keyboard suggestion
 
 Emacs frequently relies upon the Control key. I recommend using the left Control with right-hand keys, and vice versa. The left Control is more ergonomic if remapped to the Caps Lock key. Ideally, shift-CapsLock could retain the CapsLock function.
 
@@ -30,3 +33,17 @@ Emacs frequently relies upon the Control key. I recommend using the left Control
 This hand-rolled configuration of Emacs uses the default "vanilla" keybindings. These keybindings have been called many things including "insane." You can use vi modal editing keybindings in emacs by invoking evil mode \\
 `M-x evil-mode` \\
 Alternatively, change to evil mode by default by changing Emacs.org to `(evil-mode 1)`.
+
+* Julia 
+
+`julia-repl` with the vterm backend is currently the default. Comment out some lines in Emacs.org to return to the ansi-term backend. 
+
+`julia-snail` can also be tried by uncommenting the relevant lines in Emacs.org.
+
+* Python 
+
+A python IDE using `lsp-mode` is set up. It requires system installation of `pyls` with the command \\
+`pip install --user "python-language-server[all]"`
+
+Open a python file. Then open an inferior python shell using `M-x run-python` or maybe even `M-x python`. Use commands like `M-x python-shell-send-region` to send code from the python file to the REPL, although there really should be some better shortcuts.
+Use `M-x treemacs-symbols` to see a workspace dashboard. You should see a breadcrumb list in the header as well. Linting is on and will detect syntax errors. Code completion and function signatures should work although they might be slow due to pyls. Debugging also available with `dap-mode`. More info available at https://www.youtube.com/watch?v=jPXIP46BnNA. 
