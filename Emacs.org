@@ -16,30 +16,31 @@
 
 ** Font configuration
 #+begin_src emacs-lisp 
-  ;; You will most likely need to adjust this font size for your system!
-  (defvar runemacs/default-font-size 120)
-  (defvar runemacs/default-variable-font-size 130)
+    ;; You will most likely need to adjust this font size for your system!
+    (defvar runemacs/default-font-size 120)
+    (defvar runemacs/default-variable-font-size 130)
 
-  ;; Make frame transparency overridable
-  (defvar runemacs/frame-transparency '(100 . 90))
-;;  (defvar runemacs/frame-transparency '(90 . 80))
-;;  (defvar runemacs/frame-transparency-inactive '(80 . 80))
+    ;; Make frame transparency overridable
+    (defvar runemacs/frame-transparency '(100 . 90))
+  ;;  (defvar runemacs/frame-transparency '(90 . 80))
+  ;;  (defvar runemacs/frame-transparency-inactive '(80 . 80))
 
-  (set-face-attribute 'default nil :font "Fira Code Retina" :height runemacs/default-font-size)
+    (set-face-attribute 'default nil :font "Fira Code Retina" :height runemacs/default-font-size)
 
-  ;; Set the fixed pitch face
-  (set-face-attribute 'fixed-pitch nil :font "Fira Code Retina" :height runemacs/default-font-size)
+    ;; Set the fixed pitch face
+    (set-face-attribute 'fixed-pitch nil :font "Fira Code Retina" :height runemacs/default-font-size)
 
-  ;; Set the variable pitch face
-  (set-face-attribute 'variable-pitch nil :font "Cantarell" :height runemacs/default-variable-font-size :weight 'regular)
+    ;; Set the variable pitch face
+    (set-face-attribute 'variable-pitch nil :font "Fira Code Retina" :height runemacs/default-variable-font-size :weight 'regular)
+;;  (set-face-attribute 'variable-pitch nil :font "Cantarell" :height runemacs/default-variable-font-size :weight 'regular)
 
-  ;; Set frame transparency
-  (set-frame-parameter (selected-frame) 'alpha runemacs/frame-transparency)
-  (add-to-list 'default-frame-alist `(alpha . ,runemacs/frame-transparency))
+    ;; Set frame transparency
+    (set-frame-parameter (selected-frame) 'alpha runemacs/frame-transparency)
+    (add-to-list 'default-frame-alist `(alpha . ,runemacs/frame-transparency))
 
-  ;; maximize frame
-  (set-frame-parameter (selected-frame) 'fullscreen 'maximized)
-  (add-to-list 'default-frame-alist '(fullscreen . maximized))
+    ;; maximize frame
+    (set-frame-parameter (selected-frame) 'fullscreen 'maximized)
+    (add-to-list 'default-frame-alist '(fullscreen . maximized))
 #+end_src
 
 ** Line numbers
@@ -337,7 +338,7 @@ Useful key bindings: (first two didn't seem to work for me)
     (setq org-log-into-drawer t)
 
       (setq org-agenda-files
-          '("~/.emacs.d/OrgFiles/Tasks.org")))
+          '("~/OrgFiles/Tasks.org")))
 
   (use-package org-bullets
     :hook (org-mode . org-bullets-mode)
@@ -413,35 +414,35 @@ See daviwil/emacs-from-scratch to get it back.
 #+begin_src emacs-lisp
   (setq org-capture-templates
     `(("t" "Tasks / Projects")
-      ("tt" "Task" entry (file+olp "~/.emacs.d/OrgFiles/Tasks.org" "Inbox")
+      ("tt" "Task" entry (file+olp "~/OrgFiles/Tasks.org" "Inbox")
            "* TODO %?\n  %U\n  %a\n  %i" :empty-lines 1)
 
       ("j" "Journal Entries")
       ("jj" "Journal" entry
-           (file+olp+datetree "~/.emacs.d/OrgFiles/Journal.org")
+           (file+olp+datetree "~/OrgFiles/Journal.org")
            "\n* %<%I:%M %p> - Journal :journal:\n\n%?\n\n"
            ;; ,(dw/read-file-as-string "~/Notes/Templates/Daily.org")
            :clock-in :clock-resume
            :empty-lines 1)
       ("jm" "Meeting" entry
-           (file+olp+datetree "~/.emacs.d/OrgFiles/Journal.org")
+           (file+olp+datetree "~/OrgFiles/Journal.org")
            "* %<%I:%M %p> - %a :meetings:\n\n%?\n\n"
            :clock-in :clock-resume
            :empty-lines 1)
 
       ("w" "Workflows")
-      ("we" "Checking Email" entry (file+olp+datetree "~/.emacs.d/OrgFiles/Journal.org")
+      ("we" "Checking Email" entry (file+olp+datetree "~/OrgFiles/Journal.org")
            "* Checking Email :email:\n\n%?" :clock-in :clock-resume :empty-lines 1)
 
       ("m" "Email Workflow")
-      ("mf" "Follow Up" entry (file+olp "~/.emacs.d/OrgFiles/Mail.org" "Follow Up")
+      ("mf" "Follow Up" entry (file+olp "~/OrgFiles/Mail.org" "Follow Up")
               "* TODO %:fromname re %a\n\n %i"
               :immediate-finish t)
-      ("mr" "Read Later" entry (file+olp "~/.emacs.d/OrgFiles/Mail.org" "Read Later")
+      ("mr" "Read Later" entry (file+olp "~/OrgFiles/Mail.org" "Read Later")
               "* TODO %:fromname re %a\n\n %i"
               :immediate-finish t)
       ;;("m" "Metrics Capture")
-     ;; ("mw" "Weight" table-line (file+headline "~/.emacs.d/OrgFiles/Metrics.org" "Weight")
+     ;; ("mw" "Weight" table-line (file+headline "~/OrgFiles/Metrics.org" "Weight")
        ;;"| %U | %^{Weight} | %^{Notes} |" :kill-buffer t)
       ))
 
@@ -458,8 +459,8 @@ See daviwil/emacs-from-scratch to get it back.
        ("idea" . ?i)))
 
   (setq org-refile-targets
-    '(("~/.emacs.d/OrgFiles/Archive.org" :maxlevel . 1)
-      ("~/.emacs.d/OrgFiles/Tasks.org" :maxlevel . 1)))
+    '(("~/OrgFiles/Archive.org" :maxlevel . 1)
+      ("~/OrgFiles/Tasks.org" :maxlevel . 1)))
 
   ;; Save Org buffers after refiling!
   (advice-add 'org-refile :after 'org-save-all-org-buffers)
@@ -617,7 +618,7 @@ Switched off by default. Change to (evil-mode 1) below.
   ;; I pick palenight below
   (use-package doom-themes
     :init (load-theme 'doom-one t))
-;;    :init (load-theme 'doom-palenight t))
+;;  can replace doom-one with doom-palenight
 
 #+end_src
 
