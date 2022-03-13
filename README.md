@@ -1,13 +1,16 @@
 # runemacs
-A vanilla emacs configuration following daviwil/emacs-from-scratch with some additions for scientific computing
+A vanilla emacs configuration following https://github.com/daviwil/emacs-from-scratch with some additions for scientific computing
 
 * Installation
 
 `git clone https://github.com/ggebbie/runemacs` 
 
+Install in some usual places, like:
+`cp -r runemacs ~/.config/emacs` 
+or
 `cp -r runemacs ~/.emacs.d` 
 
-Make sure not to overwrite .emacs.d if you need to save your old configuration. 
+Make sure not to overwrite .emacs.d if you need to save your old configuration. Remove `~/.emacs` so that it doesn't interrupt the initialization. 
 
 Invoke emacs and open Emacs.org
 
@@ -18,7 +21,7 @@ to create the ~/.emacs.d/init.el file. Close and open emacs and you should have 
 The use of the vterm in various packages requires compilation in your system. Emacs will ask for confirmation a few times during the first startup.
 
 For ubuntu users, the first startup  will not be complete unless a few fonts packages are installed on the system. Installation can be done using:
-`sudo apt install fonts-firacode` \\
+`sudo apt install fonts-firacode` \
 `sudo apt install fonts-cantarell`
 
 The emacs directory editor "dired" uses some fancy icons. It appears that they need to be manually installed. In an open emacs session, invoke the command:
@@ -47,3 +50,7 @@ A python IDE using `lsp-mode` is set up. It requires system installation of `pyl
 
 Open a python file. Then open an inferior python shell using `M-x run-python` or maybe even `M-x python`. Use commands like `M-x python-shell-send-region` to send code from the python file to the REPL, although there really should be some better shortcuts.
 Use `M-x treemacs-symbols` to see a workspace dashboard. You should see a breadcrumb list in the header as well. Linting is on and will detect syntax errors. Code completion and function signatures should work although they might be slow due to pyls. Debugging also available with `dap-mode`. More info available at https://www.youtube.com/watch?v=jPXIP46BnNA. 
+
+* Things to modify to your preference
+
+Org files are hard coded to go at ~/OrgFiles. Email information should be changed to your preference.
