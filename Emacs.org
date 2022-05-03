@@ -1,5 +1,5 @@
 #+title Runemacs Configuration
-#+PROPERTY: header-args:emacs-lisp :tangle ./init.el :mkdirp yes
+#+PROPERTY: header-args:emacs-lisp :tangle .config/emacs/init.el :mkdirp yes
 * Basic UI Configuration
 
 #+begin_src emacs-lisp 
@@ -16,31 +16,43 @@
 
 ** Font configuration
 #+begin_src emacs-lisp 
-    ;; You will most likely need to adjust this font size for your system!
-    (defvar runemacs/default-font-size 120)
-    (defvar runemacs/default-variable-font-size 130)
+  ;; You will most likely need to adjust this font size for your system!
+  (defvar runemacs/default-font-size 120)
+  (defvar runemacs/default-variable-font-size 130)
 
-    ;; Make frame transparency overridable
-    (defvar runemacs/frame-transparency '(100 . 90))
-  ;;  (defvar runemacs/frame-transparency '(90 . 80))
+  ;; Make frame transparency overridable
+  ;;  (defvar runemacs/frame-transparency '(100 . 90))
+  (defvar runemacs/frame-transparency '(90 . 80))
   ;;  (defvar runemacs/frame-transparency-inactive '(80 . 80))
 
+  ;; Set frame transparency
+  (set-frame-parameter (selected-frame) 'alpha runemacs/frame-transparency)
+  (add-to-list 'default-frame-alist `(alpha . ,runemacs/frame-transparency))
+
+  ;; maximize frame
+  (set-frame-parameter (selected-frame) 'fullscreen 'maximized)
+  (add-to-list 'default-frame-alist '(fullscreen . maximized))
+#+end_src
+
+#+begin_src emacs-lisp
+  (defun runemacs/set-font-faces ()
+    (message "Setting faces!")
     (set-face-attribute 'default nil :font "Fira Code Retina" :height runemacs/default-font-size)
 
     ;; Set the fixed pitch face
     (set-face-attribute 'fixed-pitch nil :font "Fira Code Retina" :height runemacs/default-font-size)
 
     ;; Set the variable pitch face
-    (set-face-attribute 'variable-pitch nil :font "Fira Code Retina" :height runemacs/default-variable-font-size :weight 'regular)
-;;  (set-face-attribute 'variable-pitch nil :font "Cantarell" :height runemacs/default-variable-font-size :weight 'regular)
+    (set-face-attribute 'variable-pitch nil :font "Cantarell" :height runemacs/default-variable-font-size :weight 'regular))
 
-    ;; Set frame transparency
-    (set-frame-parameter (selected-frame) 'alpha runemacs/frame-transparency)
-    (add-to-list 'default-frame-alist `(alpha . ,runemacs/frame-transparency))
+  (if (daemonp)
+      (add-hook 'after-make-frame-functions
+                (lambda (frame)
+                  (setq doom-modeline-icon t)
+                  (with-selected-frame frame
+                    (runemacs/set-font-faces))))
+      (runemacs/set-font-faces))
 
-    ;; maximize frame
-    (set-frame-parameter (selected-frame) 'fullscreen 'maximized)
-    (add-to-list 'default-frame-alist '(fullscreen . maximized))
 #+end_src
 
 ** Line numbers
@@ -61,6 +73,26 @@ perhaps needs to be after package manager?
 #+end_src
 
 * Emacs package manager
+
+add bootstrap for straight.el
+#+begin_src emacs-lisp
+  (defvar bootstrap-version)
+  (let ((bootstrap-file
+         (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+        (bootstrap-version 5))
+    (unless (file-exists-p bootstrap-file)
+      (with-current-buffer
+          (url-retrieve-synchronously
+           "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+           'silent 'inhibit-cookies)
+        (goto-char (point-max))
+        (eval-print-last-sexp)))
+    (load bootstrap-file nil 'nomessage))
+
+#+end_src
+
+
+
 #+begin_src emacs-lisp
 ;; Initialize package sources
 (require 'package)
@@ -101,7 +133,7 @@ Note: there may be a conflict with evil-mode here, should be after evil.
       (runemacs/leader-keys
         "t"  '(:ignore t :which-key "toggles")
         "tt" '(counsel-load-theme :which-key "choose theme")
-        "fde" '(lambda () (interactive) (find-file (expand-file-name "~/.emacs.d/Emacs.org")))))
+        "fde" '(lambda () (interactive) (find-file (expand-file-name "~/.dotfiles/Emacs.org")))))
 
 #+end_src
 
@@ -132,8 +164,8 @@ This is an example of using [[https://github.com/abo-abo/hydra][Hydra]] to desig
     ("k" text-scale-decrease "out")
     ("f" nil "finished" :exit t))
 
-;  (runemacs/leader-keys
-;    "ts" '(hydra-text-scale/body :which-key "scale text"))
+  ;;(runemacs/leader-keys
+  ;;  "ts" '(hydra-text-scale/body :which-key "scale text"))
 
 #+end_src
 
@@ -180,9 +212,11 @@ Make sure that you have the [[https://github.com/akermu/emacs-libvterm/#requirem
     :config
     (setq term-prompt-regexp "^[^#$%>\n]*[#$%>] *")  ;; Set this to match your custom shell prompt
     ;;(setq vterm-shell "zsh")                       ;; Set this to customize the shell to launch
-    (setq vterm-max-scrollback 10000))
-
+    (setq vterm-max-scrollback 10000)
+    ;; have C-M-j work as counsel-switch-buffer in vterm
+    (define-key vterm-mode-map (kbd "C-M-j") nil))
 #+end_src
+
 *** Eshell
 Useful key bindings: (first two didn't seem to work for me)
 - =C-c C-p= / =C-c C-n= - go back and forward in the buffer's prompts 
@@ -284,34 +318,34 @@ Useful key bindings: (first two didn't seem to work for me)
 
 *NOTE*:  the first time on a new machine, must run `M-x all-the-icons-install-fonts` to get the icons to show up correctly.
 #+begin_src emacs-lisp
-    (use-package all-the-icons)
+  (use-package all-the-icons)
 
-    (use-package dired
-      :ensure nil
-      :commands (dired dired-jump)
-      :bind (("C-x C-j" . dired-jump))
-      :custom ((dired-listing-switches "-agho --group-directories-first")))
+  (use-package dired
+    :ensure nil
+    :commands (dired dired-jump)
+    :bind (("C-x C-j" . dired-jump))
+    :custom ((dired-listing-switches "-agho --group-directories-first")))
 
-    (use-package dired-single
-      :commands (dired dired-jump))
+  (use-package dired-single
+    :commands (dired dired-jump))
 
-    (use-package all-the-icons-dired
-;;      :after matlab
-      :hook (dired-mode . all-the-icons-dired-mode))
+  (use-package all-the-icons-dired
+    :hook (dired-mode . all-the-icons-dired-mode))
 
-    (use-package dired-open
-      :commands (dired dired-jump)
-      :config
-      ;; Doesn't work as expected!
-      ;;(add-to-list 'dired-open-functions #'dired-open-xdg t)
-      (setq dired-open-extensions '(("png" . "feh")
-                                    ("mkv" . "mpv"))))
+  (use-package dired-open
+    :commands (dired dired-jump)
+    :config
+    ;; Doesn't work as expected!
+    ;;(add-to-list 'dired-open-functions #'dired-open-xdg t)
+    (setq dired-open-extensions '(("png" . "feh")
+                                  ("mkv" . "mpv"))))
 
-    (use-package dired-hide-dotfiles
-      :hook (dired-mode . dired-hide-dotfiles-mode)
-      :bind (
-             :map dired-mode-map
-             ("h" . dired-hide-dotfiles-mode)))
+  (use-package dired-hide-dotfiles
+    :hook (dired-mode . dired-hide-dotfiles-mode)
+    :bind (
+           :map dired-mode-map
+           ("h" . describe-mode) ;; make sure "h" does help, don't know why I need to do this
+           ("H" . dired-hide-dotfiles-mode)))
 
 #+end_src
 
@@ -346,7 +380,7 @@ Useful key bindings: (first two didn't seem to work for me)
     (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 
   (defun runemacs/org-mode-visual-fill ()
-    (setq visual-fill-column-width 100
+    (setq visual-fill-column-width 120
           visual-fill-column-center-text t)
     (visual-fill-column-mode 1))
 
@@ -673,7 +707,7 @@ Switched off by default. Change to (evil-mode 1) below.
 
   #+end_src
 
-** Matlab
+** MATLAB
 #+begin_src emacs-lisp
   (use-package matlab
     :ensure matlab-mode
@@ -697,37 +731,67 @@ Switched off by default. Change to (evil-mode 1) below.
   ;; all-the-icons modeline is incorrect
   (add-to-list `all-the-icons-icon-alist `("\\.m$" all-the-icons-fileicon "matlab" :face all-the-icons-orange))
 
+  (add-to-list `all-the-icons-icon-alist `("\\.f$" all-the-icons-fileicon "fortran" :face all-the-icons-purple))
+  (add-to-list `all-the-icons-icon-alist `("\\.F$" all-the-icons-fileicon "fortran" :face all-the-icons-purple))
+
 #+end_src
 
 ** Julia
+
+Julia mode handles linting etc. for .jl files.
 #+begin_src emacs-lisp
-    (use-package julia-mode)
+   (use-package julia-mode)
+#+end_src emacs-lisp
 
-    (use-package julia-repl
-      :ensure t
-      :commands julia-repl julia-repl-mode
-      :init (require 'julia-repl)
-      :config
-      (setq julia-repl-executable-records
-            '(
-              (default "julia")))
-             (load-library "julia-mode"))
+There are three choices for running the Julia command line.
 
-            ;; (remote "ssh -t me@myhost /usr/bin/julia")
+*** Julia Snail (more features)
 
-    (add-hook 'julia-mode-hook 'julia-repl-mode) ;; always use minor mode
-    (julia-repl-set-terminal-backend 'vterm)
-    (setq vterm-kill-buffer-on-exit nil)
+Allow org-babel functionality, plots in Emacs, and more.
+#+begin_src emacs-lisp
+  (use-package julia-snail
+    :ensure t
+    :custom
+    (julia-snail-use-emoji-mode-lighter nil "no snail emoji")
+    :hook (julia-mode . julia-snail-mode))
 #+end_src
 
-** Try out julia-snail
+*** Julia REPL (lightweight)
 
+Quick starting, yet the vterm-based terminal replicates the Julia REPL features.
 #+begin_src emacs-lisp
-;(use-package julia-snail
-;  :ensure t
-;  :requires vterm
-;  :hook (julia-mode . julia-snail-mode))
-#+end_src 
+  (use-package julia-repl
+    :defer t
+    :commands julia-repl julia-repl-mode
+    :init (require 'julia-repl)
+    :config
+    (setq julia-repl-executable-records
+          '(
+            (default "julia")))
+    (load-library "julia-mode"))
+
+  ;; (remote "ssh -t me@myhost /usr/bin/julia")
+
+  (add-hook 'julia-mode-hook 'julia-repl-mode) ;; always use minor mode
+  (julia-repl-set-terminal-backend 'vterm)
+  ;;(setq vterm-kill-buffer-on-exit nil)
+#+end_src
+
+** R (or Julia)
+
+A third method to run a Julia REPL (not recommended). Use ess-site below to use this with Julia. Use ess-r-mode to restrict this to R only.
+ESS breaks the doom-modeline so that the buffer name is not seen in fullscreen mode. Commenting out both `require` statements, the buffer name is missing for R files but not other files. 
+[[https://emacs.stackexchange.com/questions/29748/install-ess-with-use-package][Use-package and ESS]]
+#+begin_src emacs-lisp
+  (use-package ess
+    :defer t)
+  ;;  :init (require `ess-r-mode))
+  ;; ;;  :init (require `ess-site))
+
+  (add-hook 'inferior-ess-mode-hook
+            (lambda ()
+              (add-to-list 'mode-line-process `(:eval (nth ess--busy-count ess-busy-strings)))))
+#+end_src
   
 * Languages
 ** IDE Features with lsp-mode
@@ -1099,22 +1163,38 @@ Add the initial =mu4e= configuration:
 
     ;; Refresh mail using isync every 10 minutes
     (setq mu4e-update-interval (* 10 60))
-    (setq mu4e-get-mail-command "mbsync -a")
+    (setq mu4e-get-mail-command "/usr/bin/mbsync -a")
     (setq mu4e-maildir "~/Mail")
-      ;; Make sure plain text mails flow correctly for recipients
+    ;; Make sure plain text mails flow correctly for recipients
     (setq mu4e-compose-format-flowed t)
 
-     ;; gg added this one
+    ;; gg added this one
     (setq mu4e-compose-dont-reply-to-self t)
+  
     (setq mu4e-contexts
           (list
            ;; Work account
            (make-mu4e-context
-            :name "Gmail"
+            :name "personal"
             :match-func
-              (lambda (msg)
-                (when msg
-                  (string-prefix-p "/Gmail" (mu4e-message-field msg :maildir))))
+            (lambda (msg)
+              (when msg
+                (string-prefix-p "/personal" (mu4e-message-field msg :maildir))))
+            :vars '((user-mail-address . "gebbie@gmail.edu")
+                    (user-full-name    . "Jake")
+                    (smtpmail-smtp-server  . "smtp.gmail.com")
+                    (smtpmail-smtp-service . 465)
+                    (smtpmail-stream-type  . ssl)
+                    (mu4e-drafts-folder  . "/Gmail/[Gmail]/Drafts")
+                    (mu4e-sent-folder  . "/Gmail/[Gmail]/Sent Mail")
+                    (mu4e-refile-folder  . "/Gmail/[Gmail]/All Mail")
+                    (mu4e-trash-folder  . "/Gmail/[Gmail]/Trash")))
+           (make-mu4e-context
+            :name "jgebbie"
+            :match-func
+            (lambda (msg)
+              (when msg
+                (string-prefix-p "/jgebbie" (mu4e-message-field msg :maildir))))
             :vars '((user-mail-address . "jgebbie@whoi.edu")
                     (user-full-name    . "Jake Gebbie")
                     (smtpmail-smtp-server  . "smtp.gmail.com")
@@ -1123,19 +1203,35 @@ Add the initial =mu4e= configuration:
                     (mu4e-drafts-folder  . "/Gmail/[Gmail]/Drafts")
                     (mu4e-sent-folder  . "/Gmail/[Gmail]/Sent Mail")
                     (mu4e-refile-folder  . "/Gmail/[Gmail]/All Mail")
-                    (mu4e-trash-folder  . "/Gmail/[Gmail]/Trash")))))
+                    (mu4e-trash-folder  . "/Gmail/[Gmail]/Trash")))
+           (make-mu4e-context
+            :name "ggebbie"
+            :match-func
+            (lambda (msg)
+              (when msg
+                (string-prefix-p "/ggebbie" (mu4e-message-field msg :maildir))))
+            :vars '((user-mail-address . "ggebbie@whoi.edu")
+                    (user-full-name    . "G Jake Gebbie")
+                    (smtpmail-smtp-server  . "smtp.gmail.com")
+                    (smtpmail-smtp-service . 465)
+                    (smtpmail-stream-type  . ssl)
+                    (mu4e-drafts-folder  . "/Gmail/[Gmail]/Drafts")
+                    (mu4e-sent-folder  . "/Gmail/[Gmail]/Sent Mail")
+                    (mu4e-refile-folder  . "/Gmail/[Gmail]/All Mail")
+                    (mu4e-trash-folder  . "/Gmail/[Gmail]/Trash")))
+           ))
 
-  (defun runemacs/capture-mail-follow-up (msg)
-    (interactive)
-    (call-interactively 'org-store-link)
-    (org-capture nil "mf"))
+    (defun runemacs/capture-mail-follow-up (msg)
+      (interactive)
+      (call-interactively 'org-store-link)
+      (org-capture nil "mf"))
 
-  (defun runemacs/capture-mail-read-later (msg)
-    (interactive)
-    (call-interactively 'org-store-link)
-    (org-capture nil "mr"))
+    (defun runemacs/capture-mail-read-later (msg)
+      (interactive)
+      (call-interactively 'org-store-link)
+      (org-capture nil "mr"))
 
-  ;; Add custom actions for our capture templates
+    ;; Add custom actions for our capture templates
     (add-to-list 'mu4e-headers-actions
                  '("follow up" . runemacs/capture-mail-follow-up) t)
     (add-to-list 'mu4e-view-actions
@@ -1146,11 +1242,11 @@ Add the initial =mu4e= configuration:
                  '("read later" . runemacs/capture-mail-read-later) t)
 
     (setq mu4e-maildir-shortcuts
-        '((:maildir "/Gmail/Inbox"    :key ?i)
-          (:maildir "/Gmail/[Gmail]/Sent Mail" :key ?s)
-          (:maildir "/Gmail/[Gmail]/Trash"     :key ?t)
-          (:maildir "/Gmail/[Gmail]/Drafts"    :key ?d)
-          (:maildir "/Gmail/[Gmail]/All Mail"  :key ?a)))
+          '((:maildir "/Gmail/Inbox"    :key ?i)
+            (:maildir "/Gmail/[Gmail]/Sent Mail" :key ?s)
+            (:maildir "/Gmail/[Gmail]/Trash"     :key ?t)
+            (:maildir "/Gmail/[Gmail]/Drafts"    :key ?d)
+            (:maildir "/Gmail/[Gmail]/All Mail"  :key ?a)))
 
     (setq mu4e-bookmarks
           '((:name "Unread messages" :query "flag:unread AND NOT flag:trashed" :key ?i)
@@ -1249,5 +1345,11 @@ Alternatively if you just want be reminded when you didn't use HTML, use =org-mi
                                    (reply-to-text	. (text)))
     org-msg-convert-citation t))
 
+#+end_src
+
+** Startup in dired mode
+
+#+begin_src emacs-lisp
+  (dired "~")
 #+end_src
 
