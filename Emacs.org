@@ -45,6 +45,7 @@
     ;; Set the variable pitch face
     (set-face-attribute 'variable-pitch nil :font "Cantarell" :height runemacs/default-variable-font-size :weight 'regular))
 
+;; keep the correct font if using the emacs daemon and emacsclient
   (if (daemonp)
       (add-hook 'after-make-frame-functions
                 (lambda (frame)
@@ -74,24 +75,22 @@ perhaps needs to be after package manager?
 
 * Emacs package manager
 
-add bootstrap for straight.el
-#+begin_src emacs-lisp
-  (defvar bootstrap-version)
-  (let ((bootstrap-file
-         (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-        (bootstrap-version 5))
-    (unless (file-exists-p bootstrap-file)
-      (with-current-buffer
-          (url-retrieve-synchronously
-           "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
-           'silent 'inhibit-cookies)
-        (goto-char (point-max))
-        (eval-print-last-sexp)))
-    (load bootstrap-file nil 'nomessage))
+add bootstrap for straight.el, was needed to get some packages from GitHub, not needed now
+# #+begin_src emacs-lisp
+#   (defvar bootstrap-version)
+#   (let ((bootstrap-file
+#          (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+#         (bootstrap-version 5))
+#     (unless (file-exists-p bootstrap-file)
+#       (with-current-buffer
+#           (url-retrieve-synchronously
+#            "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+#            'silent 'inhibit-cookies)
+#         (goto-char (point-max))
+#         (eval-print-last-sexp)))
+#     (load bootstrap-file nil 'nomessage))
 
-#+end_src
-
-
+# #+end_src
 
 #+begin_src emacs-lisp
 ;; Initialize package sources
@@ -351,42 +350,13 @@ Useful key bindings: (first two didn't seem to work for me)
 
 * Org mode
 
+[[https://orgmode.org/][Org Mode]] is one of the hallmark features of Emacs.  It is a rich document editor, project planner, task and time tracker, blogging engine, and literate coding utility all wrapped up in one package.
+
 ** Org mode fonts and bullets
 
+The =runemacs/org-font-setup= function configures various text faces to tweak the sizes of headings and use variable width fonts in most cases so that it looks more like we're editing a document in =org-mode=.  We switch back to fixed width (monospace) fonts for code blocks and tables so that they display correctly.
+
 #+begin_src emacs-lisp
-  (defun runemacs/org-mode-setup ()
-    (org-indent-mode)
-    (variable-pitch-mode 1)
-    (visual-line-mode 1))
-
-  (use-package org
-    :pin org
-    :commands (org-capture org-agenda)
-    :hook (org-mode . runemacs/org-mode-setup)
-    :config
-    (setq org-ellipsis " ▾"
-          org-hide-emphasis-markers t)
-
-    (setq org-agenda-start-with-log-mode t)
-    (setq org-log-done 'time)
-    (setq org-log-into-drawer t)
-
-      (setq org-agenda-files
-          '("~/OrgFiles/Tasks.org")))
-
-  (use-package org-bullets
-    :hook (org-mode . org-bullets-mode)
-    :custom
-    (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
-
-  (defun runemacs/org-mode-visual-fill ()
-    (setq visual-fill-column-width 120
-          visual-fill-column-center-text t)
-    (visual-fill-column-mode 1))
-
-  (use-package visual-fill-column
-    :hook (org-mode . runemacs/org-mode-visual-fill))
-
   (defun runemacs/org-font-setup ()
     ;; Replace list hyphen with dot
     (font-lock-add-keywords 'org-mode
@@ -418,89 +388,130 @@ Useful key bindings: (first two didn't seem to work for me)
     (set-face-attribute 'line-number-current-line nil :inherit 'fixed-pitch))
 #+end_src
 
-** Org agenda
+** Basic config
 
-I eliminated "Low-effort next actions" and "Workflow Status" section.
-See daviwil/emacs-from-scratch to get it back.
+This section contains the basic configuration for =org-mode= plus the configuration for Org agendas and capture templates.  There's a lot to unpack in here so watch System Crafters videos for [[https://youtu.be/VcgjTEa0kU4][Part 5]] and [[https://youtu.be/PNE-mgkZ6HM][Part 6]] for a full explanation.
 
-#+begin_src emacs-lisp
-  (setq org-todo-keywords
-    '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")
-      (sequence "BACKLOG(b)" "PLAN(p)" "READY(r)" "ACTIVE(a)" "REVIEW(v)" "WAIT(w@/!)" "HOLD(h)" "|" "COMPLETED(c)" "CANC(k@)")))
-
-  ;; Configure custom agenda views
-  (setq org-agenda-custom-commands
-   '(("d" "Dashboard"
-     ((agenda "" ((org-deadline-warning-days 7)))
-      (todo "NEXT"
-        ((org-agenda-overriding-header "Next Tasks")))
-      (tags-todo "agenda/ACTIVE" ((org-agenda-overriding-header "Active Projects")))))
-
-    ("n" "Next Tasks"
-     ((todo "NEXT"
-        ((org-agenda-overriding-header "Next Tasks")))))
-
-    ("W" "Work Tasks" tags-todo "+work-email")))
-#+end_src
-
-** Org capture
+This part includes =org-agenda= and =org capture templates=.
 
 #+begin_src emacs-lisp
-  (setq org-capture-templates
-    `(("t" "Tasks / Projects")
-      ("tt" "Task" entry (file+olp "~/OrgFiles/Tasks.org" "Inbox")
-           "* TODO %?\n  %U\n  %a\n  %i" :empty-lines 1)
+  (defun runemacs/org-mode-setup ()
+    (org-indent-mode)
+    (variable-pitch-mode 1)
+    (visual-line-mode 1))
 
-      ("j" "Journal Entries")
-      ("jj" "Journal" entry
-           (file+olp+datetree "~/OrgFiles/Journal.org")
-           "\n* %<%I:%M %p> - Journal :journal:\n\n%?\n\n"
-           ;; ,(dw/read-file-as-string "~/Notes/Templates/Daily.org")
-           :clock-in :clock-resume
-           :empty-lines 1)
-      ("jm" "Meeting" entry
-           (file+olp+datetree "~/OrgFiles/Journal.org")
-           "* %<%I:%M %p> - %a :meetings:\n\n%?\n\n"
-           :clock-in :clock-resume
-           :empty-lines 1)
+  (use-package org
+    :pin org
+    :commands (org-capture org-agenda)
+    :hook (org-mode . runemacs/org-mode-setup)
+    :config
+    (setq org-ellipsis " ▾"
+          org-hide-emphasis-markers t)
 
-      ("w" "Workflows")
-      ("we" "Checking Email" entry (file+olp+datetree "~/OrgFiles/Journal.org")
-           "* Checking Email :email:\n\n%?" :clock-in :clock-resume :empty-lines 1)
+    (setq org-agenda-start-with-log-mode t)
+    (setq org-log-done 'time)
+    (setq org-log-into-drawer t)
 
-      ("m" "Email Workflow")
-      ("mf" "Follow Up" entry (file+olp "~/OrgFiles/Mail.org" "Follow Up")
-              "* TODO %:fromname re %a\n\n %i"
-              :immediate-finish t)
-      ("mr" "Read Later" entry (file+olp "~/OrgFiles/Mail.org" "Read Later")
-              "* TODO %:fromname re %a\n\n %i"
-              :immediate-finish t)
-      ;;("m" "Metrics Capture")
-     ;; ("mw" "Weight" table-line (file+headline "~/OrgFiles/Metrics.org" "Weight")
-       ;;"| %U | %^{Weight} | %^{Notes} |" :kill-buffer t)
-      ))
+    (setq org-agenda-files
+          '("~/OrgFiles/Tasks.org"))
 
-  (setq org-tag-alist
-    '((:startgroup)
-       ; Put mutually exclusive tags here
-       (:endgroup)
-       ("home" . ?H)
-       ("work" . ?W)
-       ("projects" . ?p)
-       ("agenda" . ?a)
-       ("email/admin" . ?e)
-       ("computing" . ?c)
-       ("idea" . ?i)))
+    (setq org-todo-keywords
+          '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")
+            (sequence "BACKLOG(b)" "PLAN(p)" "READY(r)" "ACTIVE(a)" "REVIEW(v)" "WAIT(w@/!)" "HOLD(h)" "|" "COMPLETED(c)" "CANC(k@)")))
 
-  (setq org-refile-targets
-    '(("~/OrgFiles/Archive.org" :maxlevel . 1)
-      ("~/OrgFiles/Tasks.org" :maxlevel . 1)))
+    (setq org-tag-alist
+          '((:startgroup)
+                                          ; Put mutually exclusive tags here
+            (:endgroup)
+            ("home" . ?H)
+            ("work" . ?W)
+            ("projects" . ?p)
+            ("agenda" . ?a)
+            ("email/admin" . ?e)
+            ("computing" . ?c)
+            ("idea" . ?i)))
 
-  ;; Save Org buffers after refiling!
-  (advice-add 'org-refile :after 'org-save-all-org-buffers)
+    (setq org-refile-targets
+          '(("~/OrgFiles/Archive.org" :maxlevel . 1)
+            ("~/OrgFiles/Tasks.org" :maxlevel . 1)))
+
+    ;; Save Org buffers after refiling!
+    (advice-add 'org-refile :after 'org-save-all-org-buffers)
+
+    ;; Configure custom agenda views
+    (setq org-agenda-custom-commands
+          '(("d" "Dashboard"
+             ((agenda "" ((org-deadline-warning-days 7)))
+              (todo "NEXT"
+                    ((org-agenda-overriding-header "Next Tasks")))
+              (tags-todo "agenda/ACTIVE" ((org-agenda-overriding-header "Active Projects")))))
+
+            ("n" "Next Tasks"
+             ((todo "NEXT"
+                    ((org-agenda-overriding-header "Next Tasks")))))
+
+            ("W" "Work Tasks" tags-todo "+work-email")))
+
+    (setq org-capture-templates
+          `(("t" "Tasks / Projects")
+            ("tt" "Task" entry (file+olp "~/OrgFiles/Tasks.org" "Inbox")
+             "* TODO %?\n  %U\n  %a\n  %i" :empty-lines 1)
+
+            ("j" "Journal Entries")
+            ("jj" "Journal" entry
+             (file+olp+datetree "~/OrgFiles/Journal.org")
+             "\n* %<%I:%M %p> - Journal :journal:\n\n%?\n\n"
+             ;; ,(dw/read-file-as-string "~/Notes/Templates/Daily.org")
+             :clock-in :clock-resume
+             :empty-lines 1)
+            ("jm" "Meeting" entry
+             (file+olp+datetree "~/OrgFiles/Journal.org")
+             "* %<%I:%M %p> - %a :meetings:\n\n%?\n\n"
+             :clock-in :clock-resume
+             :empty-lines 1)
+
+            ("w" "Workflows")
+            ("we" "Checking Email" entry (file+olp+datetree "~/OrgFiles/Journal.org")
+             "* Checking Email :email:\n\n%?" :clock-in :clock-resume :empty-lines 1)
+
+            ("m" "Email Workflow")
+            ("mf" "Follow Up" entry (file+olp "~/OrgFiles/Mail.org" "Follow Up")
+             "* TODO %:fromname re %a\n\n %i"
+             :immediate-finish t)
+            ("mr" "Read Later" entry (file+olp "~/OrgFiles/Mail.org" "Read Later")
+             "* TODO %:fromname re %a\n\n %i"
+             :immediate-finish t)
+            ;;("m" "Metrics Capture")
+            ;; ("mw" "Weight" table-line (file+headline "~/OrgFiles/Metrics.org" "Weight")
+            ;;"| %U | %^{Weight} | %^{Notes} |" :kill-buffer t)
+            ))
+    (runemacs/org-font-setup))
 #+end_src
 
-** Org-babel-jupyter
+*** Nicer Heading Bullets and centered org buffers
+
+[[https://github.com/sabof/org-bullets][org-bullets]] replaces the heading stars in =org-mode= buffers with nicer looking characters that you can control.  Another option for this is [[https://github.com/integral-dw/org-superstar-mode][org-superstar-mode]] which we may cover in a later video.
+
+We use [[https://github.com/joostkremers/visual-fill-column][visual-fill-column]] to center =org-mode= buffers for a more pleasing writing experience as it centers the contents of the buffer horizontally to seem more like you are editing a document.  This is really a matter of personal preference so you can remove the block below if you don't like the behavior.
+
+#+begin_src emacs-lisp
+
+  (use-package org-bullets
+    :hook (org-mode . org-bullets-mode)
+    :custom
+    (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+
+  (defun runemacs/org-mode-visual-fill ()
+    (setq visual-fill-column-width 120
+          visual-fill-column-center-text t)
+    (visual-fill-column-mode 1))
+
+  (use-package visual-fill-column
+    :hook (org-mode . runemacs/org-mode-visual-fill))
+
+#+end_src
+
+** Org-babel-jupyter (not currently used)
 #+begin_src emacs-lisp
   ;; (use-package jupyter)
   ;;  (setq org-babel-default-header-args:jupyter-julia '((:async . "yes")
