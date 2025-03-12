@@ -1,5 +1,5 @@
 # runemacs
-A vanilla Emacs 27 configuration following https://github.com/daviwil/emacs-from-scratch with some additions for scientific computing
+A vanilla Emacs 29 configuration following https://github.com/daviwil/emacs-from-scratch with some additions for scientific computing
 
 * Installation
 
@@ -24,24 +24,27 @@ For ubuntu users, the first startup  will not be complete unless a few fonts pac
 `sudo apt install fonts-firacode` \
 `sudo apt install fonts-cantarell`
 
-The emacs directory editor "dired" uses some fancy icons. It appears that they need to be manually installed. In an open emacs session, invoke the command:
+The emacs directory editor "dired" uses some fancy icons. In earlier versions, it appears that they need to be manually installed by invoking the command:
 `M-x all-the-icons-install-fonts`
+
+Now I am using `nerd-fonts` and I don't think this step is necessary anymore.
+
 
 * Keyboard suggestion
 
-Emacs frequently relies upon the Control key. I recommend using the left Control with right-hand keys, and vice versa. The left Control is more ergonomic if remapped to the Caps Lock key. Ideally, shift-CapsLock could retain the CapsLock function.
+Emacs frequently relies upon the Control key. It is recommended to use the left Control with right-hand keys, and vice versa. The left Control is more ergonomic if remapped to the Caps Lock key. Then, shift-CapsLock could retain the CapsLock function. Or, better yet is to use Home Row Modifiers (HRMs) where holding the middle finger of the home row activates Control.
 
 * Evil mode
 
 This hand-rolled configuration of Emacs uses the default "vanilla" keybindings. These keybindings have been called many things including "insane." You can use vi modal editing keybindings in emacs by invoking evil mode \\
 `M-x evil-mode` \\
-Alternatively, change to evil mode by default by changing Emacs.org to `(evil-mode 1)`.
+Alternatively, change to evil mode by default by changing Emacs.org to `(evil-mode 1)`. Uncomment the relevant sections of the configuration file before trying these commands. 
 
 * Julia 
 
 `julia-snail` is the recommended Julia IDE. 
 
-`julia-repl` with the vterm backend is also installed. `julia-repl` minor mode commands still work as long as they don't conflict with `julia-snail` commands.
+`julia-repl` with the vterm backend is also popular. `julia-repl` minor mode commands can still work as long as they don't conflict with `julia-snail` commands, although I have disabled them here.
 
 * Python 
 
