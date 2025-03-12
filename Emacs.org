@@ -3,15 +3,15 @@
 * Basic UI Configuration
 
 #+begin_src emacs-lisp 
-(setq inhibit-startup-message t)
-(scroll-bar-mode -1)        ; Disable visible scrollbar
-(tool-bar-mode -1)          ; Disable the toolbar
-(tooltip-mode -1)           ; Disable tooltips
-(set-fringe-mode 10)        ; Give some breathing room
-(menu-bar-mode -1)            ; Disable the menu bar
+  (setq inhibit-startup-message t)
+  (scroll-bar-mode -1)        ; Disable visible scrollbar
+  (tool-bar-mode -1)          ; Disable the toolbar
+  (tooltip-mode -1)           ; Disable tooltips
+  (set-fringe-mode 10)        ; Give some breathing room
+  (menu-bar-mode -1)            ; Disable the menu bar
 
-;; Set up the visible bell
-(setq visible-bell t)
+  ;; Set up the visible bell
+  (setq visible-bell t)
 #+end_src
 
 ** Font configuration
@@ -20,14 +20,24 @@
   (defvar runemacs/default-font-size 120)
   (defvar runemacs/default-variable-font-size 130)
 
-  ;; Make frame transparency overridable
-  ;;  (defvar runemacs/frame-transparency '(100 . 90))
-  (defvar runemacs/frame-transparency '(90 . 80))
-  ;;  (defvar runemacs/frame-transparency-inactive '(80 . 80))
+  (set-frame-parameter nil 'alpha-background 85) ; For current frame
+  (add-to-list 'default-frame-alist '(alpha-background . 85)) ; For all new frames henceforth
 
-  ;; Set frame transparency
-  (set-frame-parameter (selected-frame) 'alpha runemacs/frame-transparency)
-  (add-to-list 'default-frame-alist `(alpha . ,runemacs/frame-transparency))
+  ;; works to toggle one way but not the other
+  (defun toggle-window-transparency ()
+    "Toggle transparency."
+    (interactive)
+    (let ((alpha-transparency 85))
+      (pcase (frame-parameter nil 'alpha-background)
+        (alpha-transparency (set-frame-parameter nil 'alpha-background 100))
+        (t (set-frame-parameter nil 'alpha-background alpha-transparency)))))
+  (global-set-key (kbd "C-c t") 'toggle-window-transparency)
+
+  ;; Set transparency of emacs
+  (defun transparency (value)
+    "Sets the transparency of the frame window. 0=transparent/100=opaque"
+    (interactive "nTransparency Value 0 - 100 opaque:")
+    (set-frame-parameter (selected-frame) 'alpha-background value))
 
   ;; maximize frame
   (set-frame-parameter (selected-frame) 'fullscreen 'maximized)
@@ -37,22 +47,27 @@
 #+begin_src emacs-lisp
   (defun runemacs/set-font-faces ()
     (message "Setting faces!")
-    (set-face-attribute 'default nil :font "Fira Code Retina" :height runemacs/default-font-size)
+    ;;(set-face-attribute 'default nil :font "Fira Code Retina" :height runemacs/default-font-size)
+    (set-face-attribute 'default nil :font "Iosevka Extended" :height runemacs/default-font-size)
+    ;;(set-face-attribute 'default nil :font "Noto Sans" :height runemacs/default-font-size)
 
     ;; Set the fixed pitch face
-    (set-face-attribute 'fixed-pitch nil :font "Fira Code Retina" :height runemacs/default-font-size)
+    ;;(set-face-attribute 'fixed-pitch nil :font "Fira Code Retina" :height runemacs/default-font-size)
+    (set-face-attribute 'fixed-pitch nil :font "Iosevka Extended" :height runemacs/default-font-size)
+    ;;(set-face-attribute 'fixed-pitch nil :font "Noto Sans" :height runemacs/default-font-size)
 
     ;; Set the variable pitch face
+    ;;    (set-face-attribute 'variable-pitch nil :font "Iosevka" :height runemacs/default-variable-font-size :weight 'regular))
     (set-face-attribute 'variable-pitch nil :font "Cantarell" :height runemacs/default-variable-font-size :weight 'regular))
 
-;; keep the correct font if using the emacs daemon and emacsclient
+  ;; keep the correct font if using the emacs daemon and emacsclient
   (if (daemonp)
       (add-hook 'after-make-frame-functions
                 (lambda (frame)
                   (setq doom-modeline-icon t)
                   (with-selected-frame frame
                     (runemacs/set-font-faces))))
-      (runemacs/set-font-faces))
+    (runemacs/set-font-faces))
 
 #+end_src
 
@@ -75,23 +90,6 @@ perhaps needs to be after package manager?
 
 * Emacs package manager
 
-add bootstrap for straight.el, was needed to get some packages from GitHub, not needed now
-# #+begin_src emacs-lisp
-#   (defvar bootstrap-version)
-#   (let ((bootstrap-file
-#          (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-#         (bootstrap-version 5))
-#     (unless (file-exists-p bootstrap-file)
-#       (with-current-buffer
-#           (url-retrieve-synchronously
-#            "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
-#            'silent 'inhibit-cookies)
-#         (goto-char (point-max))
-#         (eval-print-last-sexp)))
-#     (load bootstrap-file nil 'nomessage))
-
-# #+end_src
-
 #+begin_src emacs-lisp
 ;; Initialize package sources
 (require 'package)
@@ -112,6 +110,27 @@ add bootstrap for straight.el, was needed to get some packages from GitHub, not 
 (setq use-package-always-ensure t)
 #+end_src
 
+** Get environmental variables into Emacs when run from daemon
+
+Add the following to your init.el (after calling package-initialize):
+
+This sets $MANPATH, $PATH and exec-path from your shell, but only when executed in a GUI frame on OS X and Linux.
+
+If you launch Emacs as a daemon from systemd or similar, you might like to use the following snippet:
+
+#+begin_src emacs-lisp
+
+  (use-package exec-path-from-shell
+    :config
+    (dolist (var '("TEXMFHOME"))
+      (add-to-list 'exec-path-from-shell-variables var))
+    (when (memq window-system '(mac ns x))
+      (exec-path-from-shell-initialize))
+    (when (daemonp)
+      (exec-path-from-shell-initialize)))
+
+#+end_src
+
 * Keybindings
 
 **  General
@@ -122,7 +141,7 @@ Note: there may be a conflict with evil-mode here, should be after evil.
 #+begin_src emacs-lisp
 
   (use-package general
-      :after evil
+;;      :after evil
       :config
       (general-create-definer runemacs/leader-keys
         :keymaps '(normal insert visual emacs)
@@ -223,7 +242,6 @@ Useful key bindings: (first two didn't seem to work for me)
 - =C-c C-u= - delete the current input string backwards up to the cursor
 - =counsel-esh-history= - A searchable history of commands typed into Eshell
 
-
 #+begin_src emacs-lisp
 
   (defun runemacs/configure-eshell ()
@@ -315,9 +333,18 @@ Useful key bindings: (first two didn't seem to work for me)
 
 *** Configuration
 
-*NOTE*:  the first time on a new machine, must run `M-x all-the-icons-install-fonts` to get the icons to show up correctly.
+*NOTE*:  the first time on a new machine, must run ~M-x all-the-icons-install-fonts~ to get the icons to show up correctly.
+*NOTE2*: updated all-the-icons-fonts to nerd fonts. Now must run ~M-x nerd-icons-install fonts~. 
 #+begin_src emacs-lisp
   (use-package all-the-icons)
+
+  (use-package nerd-icons
+    ;; :custom
+    ;; The Nerd Font you want to use in GUI
+    ;; "Symbols Nerd Font Mono" is the default and is recommended
+    ;; but you can use any other Nerd Font if you want
+    ;; (nerd-icons-font-family "Symbols Nerd Font Mono")
+    )
 
   (use-package dired
     :ensure nil
@@ -325,11 +352,16 @@ Useful key bindings: (first two didn't seem to work for me)
     :bind (("C-x C-j" . dired-jump))
     :custom ((dired-listing-switches "-agho --group-directories-first")))
 
-  (use-package dired-single
-    :commands (dired dired-jump))
+  ;; (use-package dired-single
+  ;;   :commands (dired dired-jump))
 
-  (use-package all-the-icons-dired
-    :hook (dired-mode . all-the-icons-dired-mode))
+  ;; ;;   update to nerd icons
+					  ;(use-package all-the-icons-dired
+					  ;  :hook (dired-mode . all-the-icons-dired-mode))
+
+  (use-package nerd-icons-dired
+    :hook
+    (dired-mode . nerd-icons-dired-mode))
 
   (use-package dired-open
     :commands (dired dired-jump)
@@ -337,14 +369,14 @@ Useful key bindings: (first two didn't seem to work for me)
     ;; Doesn't work as expected!
     ;;(add-to-list 'dired-open-functions #'dired-open-xdg t)
     (setq dired-open-extensions '(("png" . "feh")
-                                  ("mkv" . "mpv"))))
+				  ("mkv" . "mpv"))))
 
   (use-package dired-hide-dotfiles
     :hook (dired-mode . dired-hide-dotfiles-mode)
     :bind (
-           :map dired-mode-map
-           ("h" . describe-mode) ;; make sure "h" does help, don't know why I need to do this
-           ("H" . dired-hide-dotfiles-mode)))
+	   :map dired-mode-map
+	   ("h" . describe-mode) ;; make sure "h" does help, don't know why I need to do this
+	   ("H" . dired-hide-dotfiles-mode)))
 
 #+end_src
 
@@ -372,7 +404,13 @@ The =runemacs/org-font-setup= function configures various text faces to tweak th
                     (org-level-6 . 1.1)
                     (org-level-7 . 1.1)
                     (org-level-8 . 1.1)))
-      (set-face-attribute (car face) nil :font "Cantarell" :weight 'regular :height (cdr face)))
+      ;;(set-face-attribute (car face) nil :font "DejaVu Sans" :weight 'regular :height (cdr face))
+      (set-face-attribute (car face) nil :family "ETBembo" :weight 'thin :height (cdr face))
+      ;;(set-face-attribute (car face) nil :family "Cantarell" :weight 'regular :height (cdr face))
+
+      ;; workaround from Stack Overflow to get italics showing in org mode
+      (set-face-attribute 'italic nil :font "DejaVu Sans" :height (cdr face))
+    )
 
     ;; Ensure that anything that should be fixed-pitch in Org files appears that way
     (set-face-attribute 'org-block nil    :foreground nil :inherit 'fixed-pitch)
@@ -400,11 +438,26 @@ This part includes =org-agenda= and =org capture templates=.
     (variable-pitch-mode 1)
     (visual-line-mode 1))
 
+  (defun refresh-gtd ()
+    "Refresh all GTD files to avoid conflicts."
+    (interactive)
+    (find-alternate-file "~/OrgFiles/gtd/inbox.org")
+    (find-alternate-file "~/OrgFiles/gtd/gtd.org")
+    (find-alternate-file "~/OrgFiles/gtd/tickler.org")
+    (find-alternate-file "~/OrgFiles/gtd/archive.org")
+    )
+
   (use-package org
     :pin org
     :commands (org-capture org-agenda)
-    :hook (org-mode . runemacs/org-mode-setup)
+    :hook
+    (org-mode . runemacs/org-mode-setup)
+    (org-mode . turn-on-org-cdlatex)        
+    :init
+    (global-set-key (kbd "C-c c") 'org-capture)
+    (global-set-key (kbd "C-c o a") 'org-agenda)
     :config
+    (setq org-pretty-entities t)
     (setq org-ellipsis " ▾"
           org-hide-emphasis-markers t)
 
@@ -412,8 +465,14 @@ This part includes =org-agenda= and =org capture templates=.
     (setq org-log-done 'time)
     (setq org-log-into-drawer t)
 
+    ;; make latex previews larger
+    (setq org-format-latex-options (plist-put org-format-latex-options :scale 2.5))
+
     (setq org-agenda-files
-          '("~/OrgFiles/Tasks.org"))
+          '("~/OrgFiles/gtd/inbox.org"
+            "~/OrgFiles/gtd/gtd.org"
+            "~/OrgFiles/gtd/tickler.org"))
+    ;;'("~/OrgFiles/Tasks.org"))
 
     (setq org-todo-keywords
           '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")
@@ -431,14 +490,28 @@ This part includes =org-agenda= and =org capture templates=.
             ("computing" . ?c)
             ("idea" . ?i)))
 
-    (setq org-refile-targets
-          '(("~/OrgFiles/Archive.org" :maxlevel . 1)
-            ("~/OrgFiles/Tasks.org" :maxlevel . 1)))
+    ;; (setq org-refile-targets
+    ;;       '(("~/OrgFiles/Archive.org" :maxlevel . 1)
+    ;;         ("~/OrgFiles/Tasks.org" :maxlevel . 1)))
+
+    (setq org-refile-targets '(("~/OrgFiles/gtd/gtd.org" :maxlevel . 3)
+                               ("~/OrgFiles/gtd/someday.org" :level . 1)
+                               ("~/OrgFiles/gtd/tickler.org" :maxlevel . 2)
+                               ("~/OrgFiles/gtd/archive.org" :maxlevel . 4)))
 
     ;; Save Org buffers after refiling!
-    (advice-add 'org-refile :after 'org-save-all-org-buffers)
+    ;; error wrong number of arguments
+    ;; (advice-add 'org-refile :after 'org-save-all-org-buffers)
+    (advice-add 'org-refile :after
+                (lambda (&rest _)
+                  (org-save-all-org-buffers)))
 
-    ;; Configure custom agenda views
+    ;;(defun save-after-capture-refile ()
+    ;;   (with-current-buffer (marker-buffer org-capture-last-stored-marker)
+    ;;     (save-buffer)))
+    ;; (advice-add 'org-capture-refile :after 'save-after-capture-refile)
+
+    ;; ;; Configure custom agenda views
     (setq org-agenda-custom-commands
           '(("d" "Dashboard"
              ((agenda "" ((org-deadline-warning-days 7)))
@@ -452,45 +525,19 @@ This part includes =org-agenda= and =org capture templates=.
 
             ("W" "Work Tasks" tags-todo "+work-email")))
 
-    (setq org-capture-templates
-          `(("t" "Tasks / Projects")
-            ("tt" "Task" entry (file+olp "~/OrgFiles/Tasks.org" "Inbox")
-             "* TODO %?\n  %U\n  %a\n  %i" :empty-lines 1)
-
-            ("j" "Journal Entries")
-            ("jj" "Journal" entry
-             (file+olp+datetree "~/OrgFiles/Journal.org")
-             "\n* %<%I:%M %p> - Journal :journal:\n\n%?\n\n"
-             ;; ,(dw/read-file-as-string "~/Notes/Templates/Daily.org")
-             :clock-in :clock-resume
-             :empty-lines 1)
-            ("jm" "Meeting" entry
-             (file+olp+datetree "~/OrgFiles/Journal.org")
-             "* %<%I:%M %p> - %a :meetings:\n\n%?\n\n"
-             :clock-in :clock-resume
-             :empty-lines 1)
-
-            ("w" "Workflows")
-            ("we" "Checking Email" entry (file+olp+datetree "~/OrgFiles/Journal.org")
-             "* Checking Email :email:\n\n%?" :clock-in :clock-resume :empty-lines 1)
-
-            ("m" "Email Workflow")
-            ("mf" "Follow Up" entry (file+olp "~/OrgFiles/Mail.org" "Follow Up")
-             "* TODO %:fromname re %a\n\n %i"
-             :immediate-finish t)
-            ("mr" "Read Later" entry (file+olp "~/OrgFiles/Mail.org" "Read Later")
-             "* TODO %:fromname re %a\n\n %i"
-             :immediate-finish t)
-            ;;("m" "Metrics Capture")
-            ;; ("mw" "Weight" table-line (file+headline "~/OrgFiles/Metrics.org" "Weight")
-            ;;"| %U | %^{Weight} | %^{Notes} |" :kill-buffer t)
-            ))
+    (setq org-capture-templates '(("t" "Todo [inbox]" entry
+                                   (file+headline "~/OrgFiles/gtd/inbox.org" "Tasks")
+                                   "* TODO %i%?")
+                                  ("T" "Tickler" entry
+                                   (file+headline "~/OrgFiles/gtd/tickler.org" "Tickler")
+                                   "* %i%? \n %U")))
     (runemacs/org-font-setup))
+
 #+end_src
 
 *** Nicer Heading Bullets and centered org buffers
 
-[[https://github.com/sabof/org-bullets][org-bullets]] replaces the heading stars in =org-mode= buffers with nicer looking characters that you can control.  Another option for this is [[https://github.com/integral-dw/org-superstar-mode][org-superstar-mode]] which we may cover in a later video.
+[[https://github.com/sabof/org-bullets][org-bullets]] replaces the heading stars in =org-mode= buffers with nicer looking characters that you can control.  Another option for this is [[https://github.com/integral-dw/org-superstar-mode][org-superstar-mode]].
 
 We use [[https://github.com/joostkremers/visual-fill-column][visual-fill-column]] to center =org-mode= buffers for a more pleasing writing experience as it centers the contents of the buffer horizontally to seem more like you are editing a document.  This is really a matter of personal preference so you can remove the block below if you don't like the behavior.
 
@@ -502,7 +549,7 @@ We use [[https://github.com/joostkremers/visual-fill-column][visual-fill-column]
     (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 
   (defun runemacs/org-mode-visual-fill ()
-    (setq visual-fill-column-width 120
+    (setq visual-fill-column-width 220
           visual-fill-column-center-text t)
     (visual-fill-column-mode 1))
 
@@ -526,40 +573,340 @@ We use [[https://github.com/joostkremers/visual-fill-column][visual-fill-column]
 ** Org-babel
 
 #+begin_src emacs-lisp
-      ;; Automatically tangle our Emacs.org config file when we save it
-      (defun runemacs/org-babel-tangle-config ()
-        (when (string-equal (file-name-directory (buffer-file-name))
-                            (expand-file-name user-emacs-directory))
-          ;; Dynamic scoping to the rescue
-          (let ((org-confirm-babel-evaluate nil))
-            (org-babel-tangle))))
+    ;; Automatically tangle our Emacs.org config file when we save it
+    (defun runemacs/org-babel-tangle-config ()
+      (when (string-equal (file-name-directory (buffer-file-name))
+                          (expand-file-name user-emacs-directory))
+        ;; Dynamic scoping to the rescue
+        (let ((org-confirm-babel-evaluate nil))
+          (org-babel-tangle))))
 
-      (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'runemacs/org-babel-tangle-config)))
+    (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'runemacs/org-babel-tangle-config)))
 
-    (with-eval-after-load 'org
-      (org-babel-do-load-languages
-      'org-babel-load-languages
-     '((emacs-lisp . t)
-       (matlab . t)))
-      (push '("conf-unix" . conf-unix) org-src-lang-modes))
+  (with-eval-after-load 'org
+    (org-babel-do-load-languages
+    'org-babel-load-languages
+   '((emacs-lisp . t)
+     (python . t)
+     (julia . t)
+     (matlab . t)))
+    (push '("conf-unix" . conf-unix) org-src-lang-modes))
 
-    (setq org-confirm_babel-evaluate nil)
+  (setq org-confirm_babel-evaluate nil)
 
-    (with-eval-after-load 'org
-      ;; This is needed as of Org 9.2
-      (require 'org-tempo)
+  (with-eval-after-load 'org
+    ;; This is needed as of Org 9.2
+    (require 'org-tempo)
 
-      (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
-      (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
-      (add-to-list 'org-structure-template-alist '("py" . "src python"))
-      (add-to-list 'org-structure-template-alist '("ma" . "src matlab")))
+    (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
+    (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+    (add-to-list 'org-structure-template-alist '("py" . "src python"))
+    (add-to-list 'org-structure-template-alist '("jl" . "src julia"))
+    (add-to-list 'org-structure-template-alist '("mat" . "src matlab")))
+#+end_src
+
+** Org-roam
+
+#+begin_src emacs-lisp
+  (use-package org-roam
+    :ensure t
+    :init
+    (defun org-roam-search-args ()
+      "Search org-roam directory using consult-ripgrep. With live-preview." 
+      (let ((consult-ripgrep-args "rg --null --ignore-case --type org --line-buffered --color=never --max-columns=500 --no-heading --line-number"))
+        (consult-ripgrep org-roam-directory)))
+
+    (defun headlong ()
+      "Make the current minibuffer completion exit when there is 1 candidate."
+      (add-hook 'after-change-functions
+                (lambda (&rest _)
+                  (let* ((all (completion-all-completions
+                               (minibuffer-contents)
+                               minibuffer-completion-table
+                               minibuffer-completion-predicate
+                               (max 0 (- (point) (minibuffer-prompt-end)))))
+                         (last (last all)))
+                    (when last (setcdr last nil))
+                    (when (and all (null (cdr all)))
+                      (delete-minibuffer-contents)
+                      (insert (car all))
+                      (exit-minibuffer))))
+                nil t))
+
+    (defun org-roam-search ()
+      (interactive)
+      (minibuffer-with-setup-hook #'headlong (funcall #'org-roam-search-args)))
+
+    (global-set-key (kbd "C-c f s") 'org-roam-search)
+
+    :custom
+    (org-roam-directory "~/OrgRoam")
+    (org-roam-completion-everywhere t)
+    (org-roam-capture-templates
+     '(
+       ("d" "default" plain "%?"
+        :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+date: %U\n")
+        :unnarrowed t)
+       ("l" "programming language" plain
+        "* Characteristics\n\n- Family: %?\n- Inspired by: \n\n* Reference:\n\n"
+        :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+date: %U\n")
+        :unnarrowed t)
+       ("b" "book notes" plain
+        "\n* Source\n\nAuthor: %^{Author}\nTitle: ${title}\nYear: %^{Year}\n\n* Summary\n\n%?"
+        :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+date: %U\n")
+        :unnarrowed t)
+       ("p" "project" plain "* Goals\n\n%?\n\n* Tasks\n\n** TODO Add initial tasks\n\n* Dates\n\n"
+        :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+date: %U\n#+filetags: Project")
+        :unnarrowed t)
+       ))
+    (org-roam-dailies-capture-templates
+     '(("d" "default" entry "* %<%I:%M %p>: %?"
+        :if-new (file+head "%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n"))))
+    :bind (("C-c n l" . org-roam-buffer-toggle)
+           ("C-c n f" . org-roam-node-find)
+           ("C-c n i" . org-roam-node-insert)
+           :map org-mode-map
+           ("C-M-i" . completion-at-point)
+           :map org-roam-dailies-map
+           ("Y" . org-roam-dailies-capture-yesterday)
+           ("T" . org-roam-dailies-capture-tomorrow))
+    :bind-keymap
+    ("C-c n d" . org-roam-dailies-map)
+    :config
+    (org-roam-setup)
+    (require 'org-roam-dailies) ;; Ensure the keymap is available
+    (org-roam-db-autosync-mode))
+#+end_src
+
+Instead of editing lisp, the template can be stored in an org file. Here's an example (not tangled and not currently included in ~init.el~
+#+begin_src emacs-lisp :tangle no
+("b" "book notes" plain (file "~/RoamNotes/Templates/BookNoteTemplate.org")
+ :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n")
+ :unnarrowed t)
+#+end_src
+
+*  Consult
+
+#+begin_src emacs-lisp
+
+;; Example configuration for Consult
+(use-package consult
+  ;; Replace bindings. Lazily loaded by `use-package'.
+  :bind (;; C-c bindings in `mode-specific-map'
+         ("C-c M-x" . consult-mode-command)
+         ("C-c h" . consult-history)
+         ("C-c k" . consult-kmacro)
+         ("C-c m" . consult-man)
+         ("C-c i" . consult-info)
+         ([remap Info-search] . consult-info)
+         ;; C-x bindings in `ctl-x-map'
+         ("C-x M-:" . consult-complex-command)     ;; orig. repeat-complex-command
+         ("C-x b" . consult-buffer)                ;; orig. switch-to-buffer
+         ;;("C-M-j" . consult-buffer)                ;; orig. switch-to-buffer
+         ("C-x 4 b" . consult-buffer-other-window) ;; orig. switch-to-buffer-other-window
+         ("C-x 5 b" . consult-buffer-other-frame)  ;; orig. switch-to-buffer-other-frame
+         ("C-x t b" . consult-buffer-other-tab)    ;; orig. switch-to-buffer-other-tab
+         ("C-x r b" . consult-bookmark)            ;; orig. bookmark-jump
+         ("C-x p b" . consult-project-buffer)      ;; orig. project-switch-to-buffer
+         ;; Custom M-# bindings for fast register access
+         ("M-#" . consult-register-load)
+         ("M-'" . consult-register-store)          ;; orig. abbrev-prefix-mark (unrelated)
+         ("C-M-#" . consult-register)
+         ;; Other custom bindings
+         ("M-y" . consult-yank-pop)                ;; orig. yank-pop
+         ;; M-g bindings in `goto-map'
+         ("M-g e" . consult-compile-error)
+         ("M-g f" . consult-flymake)               ;; Alternative: consult-flycheck
+         ("M-g g" . consult-goto-line)             ;; orig. goto-line
+         ("M-g M-g" . consult-goto-line)           ;; orig. goto-line
+         ("M-g o" . consult-outline)               ;; Alternative: consult-org-heading
+         ("M-g m" . consult-mark)
+         ("M-g k" . consult-global-mark)
+         ("M-g i" . consult-imenu)
+         ("M-g I" . consult-imenu-multi)
+         ;; M-s bindings in `search-map'
+         ("M-s d" . consult-find)                  ;; Alternative: consult-fd
+         ("M-s c" . consult-locate)
+         ("M-s g" . consult-grep)
+         ("M-s G" . consult-git-grep)
+         ("M-s r" . consult-ripgrep)
+         ("M-s l" . consult-line)  ;; override isearch (formerly swiper)
+         ;;("C-s" . consult-line)  ;; override isearch (formerly swiper)
+         ("M-s L" . consult-line-multi)
+         ("M-s k" . consult-keep-lines)
+         ("M-s u" . consult-focus-lines)
+         ;; Isearch integration
+         ("M-s e" . consult-isearch-history)
+         :map isearch-mode-map
+         ("M-e" . consult-isearch-history)         ;; orig. isearch-edit-string
+         ("M-s e" . consult-isearch-history)       ;; orig. isearch-edit-string
+         ("M-s l" . consult-line)                  ;; needed by consult-line to detect isearch
+         ("M-s L" . consult-line-multi)            ;; needed by consult-line to detect isearch
+         ;; Minibuffer history
+         :map minibuffer-local-map
+         ("M-s" . consult-history)                 ;; orig. next-matching-history-element
+         ("M-r" . consult-history))                ;; orig. previous-matching-history-element
+
+  ;; Enable automatic preview at point in the *Completions* buffer. This is
+  ;; relevant when you use the default completion UI.
+  :hook (completion-list-mode . consult-preview-at-point-mode)
+
+  ;; The :init configuration is always executed (Not lazy)
+  :init
+
+  ;; Optionally configure the register formatting. This improves the register
+  ;; preview for `consult-register', `consult-register-load',
+  ;; `consult-register-store' and the Emacs built-ins.
+  (setq register-preview-delay 0.5
+        register-preview-function #'consult-register-format)
+
+  ;; Optionally tweak the register preview window.
+  ;; This adds thin lines, sorting and hides the mode line of the window.
+  (advice-add #'register-preview :override #'consult-register-window)
+
+  ;; Use Consult to select xref locations with preview
+  (setq xref-show-xrefs-function #'consult-xref
+        xref-show-definitions-function #'consult-xref)
+
+  ;; Configure other variables and modes in the :config section,
+  ;; after lazily loading the package.
+  :config
+
+  ;; Optionally configure preview. The default value
+  ;; is 'any, such that any key triggers the preview.
+  ;; (setq consult-preview-key 'any)
+  ;; (setq consult-preview-key "M-.")
+  ;; (setq consult-preview-key '("S-<down>" "S-<up>"))
+  ;; For some commands and buffer sources it is useful to configure the
+  ;; :preview-key on a per-command basis using the `consult-customize' macro.
+  (consult-customize
+   consult-theme :preview-key '(:debounce 0.2 any)
+   consult-ripgrep consult-git-grep consult-grep
+   consult-bookmark consult-recent-file consult-xref
+   consult--source-bookmark consult--source-file-register
+   consult--source-recent-file consult--source-project-recent-file
+   ;; :preview-key "M-."
+   :preview-key '(:debounce 0.4 any))
+
+  ;; Optionally configure the narrowing key.
+  ;; Both < and C-+ work reasonably well.
+  (setq consult-narrow-key "<") ;; "C-+"
+
+  ;; Optionally make narrowing help available in the minibuffer.
+  ;; You may want to use `embark-prefix-help-command' or which-key instead.
+  ;; (keymap-set consult-narrow-map (concat consult-narrow-key " ?") #'consult-narrow-help)
+)
+#+end_src
+
+* Vertico
+
+Simple vertico setup with more complex "multiform mode" enabled to mimic highlighting in counsel.
+#+begin_src emacs-lisp
+  ;; Enable vertico
+  (use-package vertico
+    :custom
+    ;; (vertico-scroll-margin 0) ;; Different scroll margin
+    (vertico-count 20) ;; Show more candidates
+    ;; (vertico-resize t) ;; Grow and shrink the Vertico minibuffer
+    (vertico-cycle t) ;; Enable cycling for `vertico-next/previous'
+    (vertico-multiform-categories
+     '((symbol (vertico-sort-function . vertico-sort-alpha))
+       (file (vertico-sort-function . sort-directories-first)
+             (+vertico-transform-functions . +vertico-highlight-directory))))
+    (vertico-multiform-commands
+     '((consult-line (vertico-sort-override-function . vertico-sort-alpha))
+       (execute-extended-command
+        (+vertico-transform-functions . +vertico-highlight-enabled-mode))))
+    :init
+    (vertico-mode)
+    (vertico-multiform-mode)
+
+    (defvar +vertico-transform-functions nil)
+
+    (cl-defmethod vertico--format-candidate :around
+      (cand prefix suffix index start &context ((not +vertico-transform-functions) null))
+      (dolist (fun (ensure-list +vertico-transform-functions))
+        (setq cand (funcall fun cand)))
+      (cl-call-next-method cand prefix suffix index start))
+
+    ;; function to highlight directories
+    (defun +vertico-highlight-directory (file)
+      "If FILE ends with a slash, highlight it as a directory."
+      (if (string-suffix-p "/" file)
+          (propertize file 'face 'marginalia-file-priv-dir) ; or face 'dired-directory
+        file))
+
+    ;; function to sort directories first
+    (defun sort-directories-first (files)
+      ;; Still sort by history position, length and alphabetically
+      (setq files (vertico-sort-history-length-alpha files))
+      ;; But then move directories first
+      (nconc (seq-filter (lambda (x) (string-suffix-p "/" x)) files)
+             (seq-remove (lambda (x) (string-suffix-p "/" x)) files)))
+
+    ;; function to highlight enabled modes similar to counsel-M-x
+    (defun +vertico-highlight-enabled-mode (cmd)
+      "If MODE is enabled, highlight it as font-lock-constant-face."
+      (let ((sym (intern cmd)))
+        (if (or (eq sym major-mode)
+                (and
+                 (memq sym minor-mode-list)
+                 (boundp sym)))
+            (propertize cmd 'face 'font-lock-constant-face)
+          cmd)))
+    )
+#+end_src
+
+Vertico has extensions. Here's one so that the entire directory in a path name is deleted with one backspace.
+#+begin_src emacs-lisp
+;; Configure directory extension.
+(use-package vertico-directory
+  :after vertico
+  :ensure nil
+  ;; More convenient directory navigation commands
+  :bind (:map vertico-map
+              ("RET" . vertico-directory-enter)
+              ("DEL" . vertico-directory-delete-char)
+              ("M-DEL" . vertico-directory-delete-word))
+  ;; Tidy shadowed file names
+  :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
+#+end_src
+
+
+* Orderless
+#+begin_src emacs-lisp
+(use-package orderless
+  :ensure t
+  :custom
+  (completion-styles '(orderless basic))
+  (completion-category-overrides '((file (styles basic partial-completion)))))
+#+end_src
+
+* Marginalia
+
+#+begin_src emacs-lisp
+;; Enable rich annotations using the Marginalia package
+(use-package marginalia
+  ;; Bind `marginalia-cycle' locally in the minibuffer.  To make the binding
+  ;; available in the *Completions* buffer, add it to the
+  ;; `completion-list-mode-map'.
+  :bind (:map minibuffer-local-map
+         ("M-A" . marginalia-cycle))
+
+  ;; The :init section is always executed.
+  :init
+
+  ;; Marginalia must be activated in the :init section of use-package such that
+  ;; the mode gets enabled right away. Note that this forces loading the
+  ;; package.
+  (marginalia-mode))
 #+end_src
 
 * Searching via Ivy and Counsel
 
 ** command log, helpful 
 #+begin_src emacs-lisp
-    (use-package command-log-mode)
+  ;;  (use-package command-log-mode)
 
   ;;  (use-package which-key
       ;; :defer 0
@@ -568,90 +915,61 @@ We use [[https://github.com/joostkremers/visual-fill-column][visual-fill-column]
       ;; (which-key-mode)
       ;; (setq which-key-idle-delay 1))
 
-    (use-package helpful
-      :commands (helpful-callable helpful-variable helpful-command helpful-key)
-      :custom
-      (counsel-describe-function-function #'helpful-callable)
-      (counsel-describe-variable-function #'helpful-variable)
-      :bind
-      ([remap describe-function] . counsel-describe-function)
-      ([remap describe-command] . helpful-command)
-      ([remap describe-variable] . counsel-describe-variable)
-      ([remap describe-key] . helpful-key))
+    ;; (use-package helpful
+    ;;   :commands (helpful-callable helpful-variable helpful-command helpful-key)
+    ;;   :custom
+    ;;   (counsel-describe-function-function #'helpful-callable)
+    ;;   (counsel-describe-variable-function #'helpful-variable)
+    ;;   :bind
+    ;;   ([remap describe-function] . counsel-describe-function)
+    ;;   ([remap describe-command] . helpful-command)
+    ;;   ([remap describe-variable] . counsel-describe-variable)
+    ;;   ([remap describe-key] . helpful-key))
 #+end_src
 
 ** Ivy
 #+begin_src emacs-lisp
-  (use-package counsel
-    :bind (("C-M-j" . 'counsel-switch-buffer)
-           :map minibuffer-local-map
-           ("C-r" . 'counsel-minibuffer-history))
-    :custom
-    (counsel-linux-app-format-function #'counsel-linux-app-format-function-name-only)
-    :config
-    (counsel-mode 1))
+  ;; (use-package counsel
+  ;;   :bind (("C-M-j" . 'counsel-switch-buffer)
+  ;;          :map minibuffer-local-map
+  ;;          ("C-r" . 'counsel-minibuffer-history))
+  ;;   :custom
+  ;;   (counsel-linux-app-format-function #'counsel-linux-app-format-function-name-only)
+  ;;   :config
+  ;;   (counsel-mode 1))
 
-  (use-package ivy
-    :diminish
-    :bind (("C-s" . swiper)
-           :map ivy-minibuffer-map
-           ("TAB" . ivy-alt-done)
-           ("C-l" . ivy-alt-done)
-           ("C-j" . ivy-next-line)
-           ("C-k" . ivy-previous-line)
-           :map ivy-switch-buffer-map
-           ("C-k" . ivy-previous-line)
-           ("C-l" . ivy-done)
-           ("C-d" . ivy-switch-buffer-kill)
-           :map ivy-reverse-i-search-map
-           ("C-k" . ivy-previous-line)
-           ("C-d" . ivy-reverse-i-search-kill))
-    :config
-    (ivy-mode 1))
+  ;; (use-package ivy
+  ;;   :diminish
+  ;;   :bind (("C-s" . swiper)
+  ;;          :map ivy-minibuffer-map
+  ;;          ("TAB" . ivy-alt-done)
+  ;;          ("C-l" . ivy-alt-done)
+  ;;          ("C-j" . ivy-next-line)
+  ;;          ("C-k" . ivy-previous-line)
+  ;;          :map ivy-switch-buffer-map
+  ;;          ("C-k" . ivy-previous-line)
+  ;;          ("C-l" . ivy-done)
+  ;;          ("C-d" . ivy-switch-buffer-kill)
+  ;;          :map ivy-reverse-i-search-map
+  ;;          ("C-k" . ivy-previous-line)
+  ;;          ("C-d" . ivy-reverse-i-search-kill))
+  ;;   :config
+  ;;   (ivy-mode 1))
 
-  (use-package ivy-rich
-    :after ivy
-    :init
-    (ivy-rich-mode 1))
+  ;; (use-package ivy-rich
+  ;;   :after ivy
+  ;;   :init
+  ;;   (ivy-rich-mode 1))
 
-  (use-package ivy-prescient
-    :after counsel
-    :custom
-    (ivy-prescient-enable-filtering nil)
-    :config
-    ;; Uncomment the following line to have sorting remembered across sessions!
-    ;(prescient-persist-mode 1)
-    (ivy-prescient-mode 1))
+  ;; (use-package ivy-prescient
+  ;;   :after counsel
+  ;;   :custom
+  ;;   (ivy-prescient-enable-filtering nil)
+  ;;   :config
+  ;;   ;; Uncomment the following line to have sorting remembered across sessions!
+  ;;   ;(prescient-persist-mode 1)
+  ;;   (ivy-prescient-mode 1))
 #+end_src
-
-* Evil mode
-
-Switched off by default. Change to (evil-mode 1) below.
-
-#+begin_src emacs-lisp
-
-(use-package evil
-  :init
-  (setq evil-want-integration t)
-  (setq evil-want-keybinding nil)
-  (setq evil-want-C-u-scroll t)
-  (setq evil-want-C-i-jump nil)
-  :config
-  (evil-mode 0)
-  (define-key evil-insert-state-map (kbd "C-g") 'evil-normal-state)
-  (define-key evil-insert-state-map (kbd "C-h") 'evil-delete-backward-char-and-join)
-;  Use visual line motions even outside of visual-line-mode buffers
- (evil-global-set-key 'motion "j" 'evil-next-visual-line)
- (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
- (evil-set-initial-state 'messages-buffer-mode 'normal)
- (evil-set-initial-state 'dashboard-mode 'normal))
-
-(use-package evil-collection
-  :after evil
-  :config
-  (evil-collection-init))
-
- #+end_src
 
 * Doom themes
 #+begin_src emacs-lisp
@@ -671,21 +989,21 @@ Switched off by default. Change to (evil-mode 1) below.
 
 ** Projectile
 #+begin_src emacs-lisp
-(use-package projectile
-  :diminish projectile-mode
-  :config (projectile-mode)
-  :custom ((projectile-completion-system 'ivy))
-  :bind-keymap
-  ("C-c p" . projectile-command-map)
-  :init
-  ;; NOTE: Set this to the folder where you keep your Git repos!
-  (when (file-directory-p "~/projects")
-    (setq projectile-project-search-path '("~/projects")))
-  (setq projectile-switch-project-action #'projectile-dired))
+  (use-package projectile
+    :diminish projectile-mode
+    :config (projectile-mode)
+  ;;  :custom ((projectile-completion-system 'ivy))
+    :bind-keymap
+    ("C-c p" . projectile-command-map)
+    :init
+    ;; NOTE: Set this to the folder where you keep your Git repos!
+    (when (file-directory-p "~/projects")
+      (setq projectile-project-search-path '("~/projects")))
+    (setq projectile-switch-project-action #'projectile-dired))
 
-(use-package counsel-projectile
-  :after projectile
-  :config (counsel-projectile-mode))
+  ;; (use-package counsel-projectile
+  ;;   :after projectile
+  ;;   :config (counsel-projectile-mode))
 #+end_src
 
 ** Magit
@@ -710,12 +1028,33 @@ Switched off by default. Change to (evil-mode 1) below.
 #+end_src
 
 * Programming
+
+** Eglot
+
+
+#+begin_src emacs-lisp
+  ;; non-Jedi's julia eglot support, seems required
+  (use-package eglot-jl)
+
+  ;; added some extra hooks that may not be in the right place here
+  (use-package eglot
+    :ensure t
+    :defer t
+    :hook (python-mode . eglot-ensure)
+          (julia-ts-mode . eglot-jl-init)
+          (julia-ts-mode . eglot-ensure)
+          (julia-ts-mode . company-mode)
+          :custom
+    (eglot-connect-timeout 3000) ;;
+    (eglot-events-buffer-size 0) ;; disable event logging
+    (eglot-sync-connect nil) ;; disable freeze when opening buffer
+    )
+#+end_src
+
 ** Rainbow delimiters
 #+begin_src emacs-lisp
-
   (use-package rainbow-delimiters
       :hook (prog-mode . rainbow-delimiters-mode))
-
   #+end_src
 
 ** MATLAB
@@ -741,10 +1080,47 @@ Switched off by default. Change to (evil-mode 1) below.
 
   ;; all-the-icons modeline is incorrect
   (add-to-list `all-the-icons-icon-alist `("\\.m$" all-the-icons-fileicon "matlab" :face all-the-icons-orange))
+  ;;(add-to-list `nerd-icons-extension-icon-alist `("m" nerd-icons-devicon "codepen" :face nerd-icons-purple))
 
+
+  ;; not forwarding a line
+  (defun matlab-shell-send-line ()
+    "Send the current line to the MATLAB shell.
+     Closed with a newline, unless used with a prefix argument."
+    (interactive)
+    (matlab-shell-run-region-or-line)
+    (forward-line)
+    )
+
+#+end_src
+
+** Fortran
+
+Default mode is fine, however fix the Fortran 77 icon in dired and modeline.
+#+begin_src emacs-lisp :tangle no
   (add-to-list `all-the-icons-icon-alist `("\\.f$" all-the-icons-fileicon "fortran" :face all-the-icons-purple))
   (add-to-list `all-the-icons-icon-alist `("\\.F$" all-the-icons-fileicon "fortran" :face all-the-icons-purple))
+#+end_src
+#+begin_src emacs-lisp 
+  (add-to-list `nerd-icons-extension-icon-alist `("f" nerd-icons-mdicon "nf-md-language_fortran" :face nerd-icons-purple))
+  (add-to-list `nerd-icons-extension-icon-alist `("F" nerd-icons-mdicon "nf-md-language_fortran" :face nerd-icons-purple))
+#+end_src
 
+** General tree-sitter setup
+
+# #+begin_src emacs-lisp
+# (use-package treesit-auto
+#   :config
+#   (global-treesit-auto-mode))
+# #+end_src
+
+#+begin_src emacs-lisp
+(use-package treesit-auto
+  :custom
+  (treesit-auto-install 'prompt)
+  :config
+  (treesit-auto-add-to-auto-mode-alist 'all)
+  (global-treesit-auto-mode))
 #+end_src
 
 ** Julia
@@ -754,7 +1130,88 @@ Julia mode handles linting etc. for .jl files.
    (use-package julia-mode)
 #+end_src emacs-lisp
 
-There are three choices for running the Julia command line.
+*** Julia tree sitter
+
+Compiling and Installing with the builtin method in Emacs
+
+This is perhaps the simplest, but it’ll only work if you don’t have an exceptional setup (so it won’t work well unless you have GCC and run some flavor of Linux.) But if your Linux installation’s plain as day, expect this method to work fine if you successfully compiled Emacs and tree-sitter from scratch.
+
+The command M-x treesit-install-language-grammar installs a language grammar by first cloning the git repo hosting it and then compiling it and storing the shared library in your .emacs.d directory.
+
+In order to determine where – and what – it can install, you must first tell Emacs where to find the language grammars. The variable treesit-language-source-alist is a simple alist that expects a form in the format of (LANG . (URL REVISION SOURCE-DIR CC C++)). Where only LANG and URL are mandatory. Leave out the rest and Emacs will try to do the right thing. It is not customizable using the Customize interface, unfortunately, so you must set and edit it manually.
+
+#+begin_src emacs-lisp
+  ;; (setq treesit-language-source-alist
+  ;;    '((bash "https://github.com/tree-sitter/tree-sitter-bash")
+  ;;      (cmake "https://github.com/uyha/tree-sitter-cmake")
+  ;;      (css "https://github.com/tree-sitter/tree-sitter-css")
+  ;;      (elisp "https://github.com/Wilfred/tree-sitter-elisp")
+  ;;      (html "https://github.com/tree-sitter/tree-sitter-html")
+  ;;      (json "https://github.com/tree-sitter/tree-sitter-json")
+  ;;      (julia "https://github.com/tree-sitter/tree-sitter-julia")
+  ;;      (make "https://github.com/alemuller/tree-sitter-make")
+  ;;      (markdown "https://github.com/ikatyang/tree-sitter-markdown")
+  ;;      (python "https://github.com/tree-sitter/tree-sitter-python")
+  ;;      (toml "https://github.com/tree-sitter/tree-sitter-toml")
+  ;;      (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+#+end_src
+
+Modes that use tree-sitter are all named <major-mode>-ts-mode. That’s the naming standard and it does mean you can quickly check if Emacs supports your pet major mode out of the box: typing C-h a -ts-mode$ should do the trick. The apropos window will list all known tree-sitter major modes.
+
+To coax Emacs into using the new major modes by default, you’ll have to either:
+
+    Edit auto-mode-alist, interpreter-mode-alist, etc. and change over all the references you care about to use new <LANGUAGE>-ts-mode major modes; or…
+    Use major-mode-remap-alist, an icky hack that maps one major mode symbol to another behind-the-scenes. That feature, rather conveniently, debuted in Emacs 29 also.
+
+Hacky though I think it is, I’d pick the major-mode-remap-alist for now: it’s easy to get started with, and you can always migrate everything to the harder, and more explicit, way once you’re happy with your new tree-sitter-enabled major modes.
+
+Here’s an example, and this time you can instead use M-x customize-option to customize it to your liking, if you prefer the customize interface.
+#+begin_src emacs-lisp
+  ;; (setq major-mode-remap-alist
+  ;;  '((yaml-mode . yaml-ts-mode)
+  ;;    (bash-mode . bash-ts-mode)
+  ;;    (json-mode . json-ts-mode)
+  ;;    (julia-mode . julia-ts-mode)
+  ;;    (python-mode . python-ts-mode)))  
+#+end_src
+
+*** Julia-ts-mode
+
+Requires(?) lsp-julia?
+
+#+begin_src emacs-lisp 
+  ;; (use-package lsp-julia
+  ;;   :config
+  ;;   (setq lsp-julia-default-environment "~/.julia/environments/v1.10")
+  ;;   (add-hook 'julia-ts-mode-hook #'lsp-mode)
+  ;;   )
+#+end_src  
+
+#+begin_src emacs-lisp
+  ;; (add-to-list 'lsp-language-id-configuration '(julia-ts-mode . "julia"))
+  ;; (lsp-register-client
+  ;; (make-lsp-client :new-connection (lsp-stdio-connection 'lsp-julia--rls-command)
+  ;;                  :major-modes '(julia-mode ess-julia-mode julia-ts-mode)
+  ;;                  :server-id 'julia-ls
+  ;;                  :multi-root t))
+#+end_src
+
+                 
+#+begin_src emacs-lisp
+(use-package julia-ts-mode
+  :ensure t
+  :mode "\\.jl$")
+#+end_src
+
+If it needs to be downloaded from GitHub, use straight or do it manually below:
+#+begin_src emacs-lisp :tangle no
+  (add-to-list 'load-path "/home/gebbie/.dotfiles/.config/emacs/julia-ts-mode")
+  (require 'julia-ts-mode)
+#+end_src
+
+Check that ts-mode is running with M-: major-mode
+
+*** There are three choices for running the Julia command line using non-tree-sitter methods
 
 *** Julia Snail (more features)
 
@@ -763,30 +1220,79 @@ Allow org-babel functionality, plots in Emacs, and more.
   (use-package julia-snail
     :ensure t
     :custom
-    (julia-snail-use-emoji-mode-lighter nil "no snail emoji")
-    :hook (julia-mode . julia-snail-mode))
+    ;;(julia-snail-use-emoji-mode-lighter nil "no snail emoji")
+    ;;(julia-snail-multimedia-enable t) # better to use .dir-locals.el files
+    (enable-remote-dir-locals t)
+    (julia-snail-executable "~/.juliaup/bin/julia")
+    :hook
+    (julia-mode . julia-snail-mode)
+    (julia-ts-mode . julia-snail-mode)
+    :bind (:map julia-snail-mode-map
+                ("C-<return>" . julia-snail-send-line-and-return))
+    :config
+    (defun julia-snail-send-line-and-return ()
+      "Send the line at point to the Julia REPL and evaluate it.
+  Without a prefix arg, evaluation occurs in the context of the
+  current module.  If one prefix arg is used (C-u), evaluation
+  occurs in the context of the Main module.  If two or more prefix
+  args are used (C-u C-u), the code is instead copied directly into
+  the REPL, and evaluation occurs in the context of the Main
+  module.
+  Then do a carriage return and go to the next line.
+  Note: Doesn't work for multiple-line objects."
+      (interactive)
+      (julia-snail-send-line)
+      (next-line))
+    )
 #+end_src
+
+*** Plotting in Julia Snail
+
+I recommend using a .dir-locals.el file like this snippet:
+((julia-mode . ((julia-snail-port . 10050)
+                (julia-snail-repl-buffer . "*julia junk*")
+		(julia-snail-multimedia-enable . t)
+		(julia-snail-multimedia-buffer-style . :single-new)
+		)))
+
+                When using the URL bridge, put ~display()~ around the plotting function.
+
+                When copying directly, it is not necessary and will open a new buffer with that figure
+
+                The new buffer is in Image major mode: use ~i + +~ to increase size
 
 *** Julia REPL (lightweight)
 
 Quick starting, yet the vterm-based terminal replicates the Julia REPL features.
 #+begin_src emacs-lisp
-  (use-package julia-repl
-    :defer t
-    :commands julia-repl julia-repl-mode
-    :init (require 'julia-repl)
-    :config
-    (setq julia-repl-executable-records
-          '(
-            (default "julia")))
-    (load-library "julia-mode"))
+  ;; (use-package julia-repl
+  ;;   :defer t
+  ;;   :commands julia-repl julia-repl-mode
+  ;;   :init (require 'julia-repl)
+  ;;   :config
+  ;;   (setq julia-repl-executable-records
+  ;;         '(
+  ;;           (default "julia")))
+  ;;   (load-library "julia-mode"))
 
-  ;; (remote "ssh -t me@myhost /usr/bin/julia")
+  ;; ;; (remote "ssh -t me@myhost /usr/bin/julia")
 
-  (add-hook 'julia-mode-hook 'julia-repl-mode) ;; always use minor mode
-  (julia-repl-set-terminal-backend 'vterm)
-  ;;(setq vterm-kill-buffer-on-exit nil)
+  ;; (add-hook 'julia-mode-hook 'julia-repl-mode) ;; always use minor mode
+  ;; (julia-repl-set-terminal-backend 'vterm)
+  ;; (setq vterm-kill-buffer-on-exit nil)
 #+end_src
+
+*** ox-pluto (experimental)
+
+requires straight.el
+# #+begin_src emacs-lisp
+# (use-package ox-pluto
+#   :straight (ox-pluto
+#              :type git
+#              :host github
+#              :repo "tecosaur/ox-pluto"))
+
+# #+end_src
 
 ** R (or Julia)
 
@@ -804,9 +1310,7 @@ ESS breaks the doom-modeline so that the buffer name is not seen in fullscreen m
               (add-to-list 'mode-line-process `(:eval (nth ess--busy-count ess-busy-strings)))))
 #+end_src
   
-* Languages
-** IDE Features with lsp-mode
-
+** Language Server Protocol
 **** lsp-mode
 
 We use the excellent [[https://emacs-lsp.github.io/lsp-mode/][lsp-mode]] to enable IDE-like functionality for many different programming languages via "language servers" that speak the [[https://microsoft.github.io/language-server-protocol/][Language Server Protocol]].  Before trying to set up =lsp-mode= for a particular language, check out the [[https://emacs-lsp.github.io/lsp-mode/page/languages/][documentation for your language]] so that you can learn which language servers are available and how to install them.
@@ -874,12 +1378,12 @@ Try these commands with =M-x=:
 
 #+begin_src emacs-lisp
 
-  (use-package lsp-ivy
-    :after lsp)
+  ;; (use-package lsp-ivy
+  ;;   :after lsp)
 
 #+end_src
 
-*** Debugging with dap-mode
+**** Debugging with dap-mode
 
 [[https://emacs-lsp.github.io/dap-mode/][dap-mode]] is an excellent package for bringing rich debugging capabilities to Emacs via the [[https://microsoft.github.io/debug-adapter-protocol/][Debug Adapter Protocol]].  You should check out the [[https://emacs-lsp.github.io/dap-mode/page/configuration/][configuration docs]] to learn how to configure the debugger for your language.  Also make sure to check out the documentation for the debug adapter to see what configuration parameters are available to use for your debug templates!
 
@@ -905,9 +1409,41 @@ Try these commands with =M-x=:
 
 #+end_src
 
-*** Python
+**  Python
+
+*** python by system crafters
+Following:
+https://systemcrafters.net/emacs-ide/python-development-config/
+
+Commands:
+- Interactive Python shell: =M-x run-python= (=C-c C-p= or =g z= in evil-mode)
+- =python-shell-send-file= (=C-c C-l=)
+- =python-shell-send-buffer= (=C-c C-c=)
+- =python-shell-send-region= (=C-c C-r=)
+
+  LSP-mode features
+
+- Completions
+- Documentation hover
+- Signature help
+- Linting / diagnostics - =flycheck-list-errors=
+- Code navigation - =lsp-find-definition= and =lsp-find-references=
+- Symbol renaming - =lsp-rename=
+- Code formatting - =lsp-format-buffer=
+- Symbol tree - =lsp-treemacs-symbols=
+
+*** Installing requirements
+
+I believe that this may be needed on a case-by-case basis.
+#+begin_src sh
+  pip install -r requirements.txt
+#+end_src
 
 We use =lsp-mode= and =dap-mode= to provide a more complete development environment for Python in Emacs.  Check out [[https://emacs-lsp.github.io/lsp-mode/page/lsp-pyls/][the =pyls= configuration]] in the =lsp-mode= documentation for more details.
+
+*** installing pyls Language Server
+
+https://emacs-lsp.github.io/lsp-mode/page/languages/
 
 Make sure you have the =pyls= language server installed before trying =lsp-mode=!
 
@@ -917,22 +1453,31 @@ pip install --user "python-language-server[all]"
 
 #+end_src
 
+Ensure that it's on the =PATH=!  If not, you may need to add =~/.local/bin= to =PATH=
+
 There are a number of other language servers for Python so if you find that =pyls= doesn't work for you, consult the =lsp-mode= [[https://emacs-lsp.github.io/lsp-mode/page/languages/][language configuration documentation]] to try the others!
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
 
   (use-package python-mode
     :ensure t
     :hook (python-mode . lsp-deferred)
     :custom
     ;; NOTE: Set these if Python 3 is called "python3" on your system!
-    ;; (python-shell-interpreter "python3")
+    (python-shell-interpreter "python3")
     ;; (dap-python-executable "python3")
-    (dap-python-debugger 'debugpy)
-    :config
-    (require 'dap-python))
+    ;;(dap-python-debugger 'debugpy) ;; throws an error here
+    ;;:config
+    ;;(require 'dap-python)
+    )
 
 #+end_src
+
+*** activating lsp-mode
+
+We are starting with the =lsp-mode= configuration from "Build Your Own IDE with lsp-mode", check that out for more details on lsp-mode!
+
+*** Virtual environments
 
 You can use the pyvenv package to use =virtualenv= environments in Emacs.  The =pyvenv-activate= command should configure Emacs to cause =lsp-mode= and =dap-mode= to use the virtual environment when they are loaded, just select the path to your virtual environment before loading your project.
 
@@ -945,7 +1490,70 @@ You can use the pyvenv package to use =virtualenv= environments in Emacs.  The =
 
 #+end_src
 
-*** Company Mode
+*** Completion error!
+
+If you see an error complaining about =company-capf=, this may be a bug with lsp-mode.
+
+As a workaround, run =package-reinstall= to reinstall =lsp-mode= and =lsp-ui= packages and then restart Emacs.
+
+*** Running unit tests
+
+Using pytest:
+
+#+begin_src sh :tangle no
+pip install pytest
+#+end_src
+
+Skip =test_results.py=, it's slow!
+
+Use Projectile's =projectile-test-project= command:
+
+- Set a directory-local variable for =projectile-project-test-cmd= with =add-dir-local-variable=
+- Set =compilation-read-command= to =nil= to skip asking every time you want to run the test (might be unsafe!)
+- You can use =g r= inside of the unit test buffer to rerun the tests or call =recompile= interactively
+
+Induce a failure!
+
+*** Debugging
+
+Configuration instructions: https://emacs-lsp.github.io/dap-mode/page/configuration/#python
+
+However, we will use =debugpy= (=ptvsd= is deprecated):
+
+#+begin_src sh :tangle no
+ pip install debugpy
+#+end_src
+
+#+begin_src emacs-lisp :tangle no
+  (dap-python-debugger 'debugpy)
+#+end_src
+
+Run =dap-debug= and select the pytest configuration.  Fails due to python2!
+
+Set =dap-python-executable= to =python3=
+
+If needed on your system
+#+begin_src emacs-lisp :tangle no
+  (dap-python-executable "python3")
+#+end_src
+
+Running the default pytest configuration doesn't launch from the correct path, let's edit the configuration with =dap-debug-edit-template=:
+
+#+begin_src emacs-lisp :tangle no
+
+ (dap-register-debug-template
+  "Python :: Run pytest (gallery-dl)"
+  (list :type "python"
+        :cwd "/home/daviwil/Projects/Code/gallery-dl"
+        :module "pytest"
+        :request "launch"
+        :debugger 'debugpy
+        :name "Python :: Run pytest (gallery-dl)"))
+#+end_src
+
+However, this still doesn't work correctly from within a file in the project folder.  dap-mode bug?
+
+** Company Mode
 
 [[http://company-mode.github.io/][Company Mode]] provides a nicer in-buffer completion interface than =completion-at-point= which is more reminiscent of what you would expect from an IDE.  We add a simple configuration to make the keybindings a little more useful (=TAB= now completes the selection and initiates completion at the current location if needed).
 
@@ -953,37 +1561,55 @@ We also use [[https://github.com/sebastiencs/company-box][company-box]] to furth
 
 #+begin_src emacs-lisp
 
+  ;; for use with lsp-mode
   ;; (use-package company
   ;;   :after lsp-mode
   ;;   :hook (lsp-mode . company-mode)
   ;;   :bind (:map company-active-map
-  ;;          ("<tab>" . company-complete-selection))
-  ;;         (:map lsp-mode-map
-  ;;          ("<tab>" . company-indent-or-complete-common))
+  ;;               ("<tab>" . company-complete-selection))
+  ;;   (:map lsp-mode-map
+  ;;         ("<tab>" . company-indent-or-complete-common))
   ;;   :custom
   ;;   (company-minimum-prefix-length 1)
   ;;   (company-idle-delay 0.0))
 
-  ;; (use-package company-box
-  ;;   :hook (company-mode . company-box-mode))
+  ;; for use with eglot
+  (use-package company
+    :after eglot
+    :hook (eglot-mode . company-mode)
+    :bind (:map company-active-map
+                ("<tab>" . company-complete-selection))
+    (:map eglot-mode-map
+          ("<tab>" . company-indent-or-complete-common))
+    :custom
+    (company-minimum-prefix-length 3) ;; formerly 1, try 3 to speed up eglot
+    (company-idle-delay 0.2) ;; formerly 0.0, try 0.2 to speed up eglot
+    )
 
-#+end_src
+  (use-package company-box
+    :hook (company-mode . company-box-mode))
 
-*** lsp-julia
+  ;; an extra command to speed up jsonrpc/company/eglot (not mentioned in this file elsewhere)
+  (fset #'jsonrpc--log-event #'ignore) ;; remove laggy typing by reducing chatty json from lsp to eglot (maybe)
+ #+end_src
 
+** lsp-julia
+
+Moved to julia-ts-mode above.
 See https://github.com/non-Jedi/lsp-julia for installation instructions.
+I recommend trying julia-ts-mode in emacs 29 instead.
 
 #+begin_src emacs-lisp
-;;      (setq lsp-julia-package-dir nil)
-;;      (setq lsp-julia-flags `("-J ~/.julia/languageserver.so"))
-;;      (require 'lsp-julia) ;must come after this!
+  ;;       (setq lsp-julia-package-dir nil)
+  ;;      (setq lsp-julia-flags `("-J ~/.julia/languageserver.so"))
+  ;;      (require 'lsp-julia) ;must come after this!
 
-;;    (use-package lsp-julia
-;;      :config
-;;      (setq lsp-julia-default-environment "~/.julia/environments/v1.6")
-;;      (setq lsp-enable-folding t))
+  ;;     (use-package lsp-julia)
+  ;; ;;      :config
+  ;; ;;      (setq lsp-julia-default-environment "~/.julia/environments/v1.6")
+  ;; ;;      (setq lsp-enable-folding t))
 
-;;    (add-hook 'julia-mode-hook #'lsp-mode)
+  ;;     (add-hook 'julia-mode-hook #'lsp-mode)
 #+end_src
 
 * Window management
@@ -1018,6 +1644,7 @@ Use buffer-move for a more general solution: Turn on a mode where you can move t
 #+end_src
 
 ** Windmove keybindings
+
 Default keybindings conflict with org mode and other selections.
 Here I make my own keybindings in analogy to emacs point movement.
 #+begin_src emacs-lisp
@@ -1030,88 +1657,534 @@ Here I make my own keybindings in analogy to emacs point movement.
 
 * LaTex
 
-** My version of  JWiegly's config [[https://github.com/jwiegley/use-package/issues/379][issue #379 in use-package]]
- multi-file document structure, LaTex packages support, in the setq variables
+** LaTex by Karthink
+
+[[https://gist.github.com/karthink/7d89df35ee9b7ac0c93d0177b862dadb][Karthink's blog]]
+
+*** LaTeX main configuration
+
+  gg: added standalone elisp to make previews bigger, added hook for bigger previews
+
+  Change "1.5" to be bigger or smaller for your setup
+
 #+begin_src emacs-lisp
-
-        (use-package tex-mode
-          :defer t
-          :ensure auctex                   ; auctex
-          :mode ("\\.tex\\'" . TeX-latex-mode)
-          :init
-          (setq reftex-plug-into-AUCTeX t)
-          (setq TeX-auto-save t)
-          (setq TeX-parse-self t)
-          (setq-default TeX-master nil)
-          (add-hook 'LaTeX-mode-hook 'reftex-mode)
-          (add-hook 'plain-TeX-mode-hook
-                    (lambda () (set (make-local-variable 'TeX-electric-math)
-                                    (cons "$" "$"))))
-          (add-hook 'LaTeX-mode-hook
-                    (lambda () (set (make-local-variable 'TeX-electric-math)
-                                    (cons "$" "$"))))
-          (add-hook 'LaTeX-mode-hook 'turn-on-auto-fill)
-          )
-
-      (setq bibtex-autokey-titleword-length 12)
-      (setq bibtex-autokey-year-length 4)
-      (setq  bibtex-autokey-name-case-convert-function 'identity)
-      (setq  bibtex-autokey-titleword-case-convert-function 'identity)
-      (setq  bibtex-autokey-titlewords 1)
-      (setq  bibtex-autokey-titlewords-stretch 0)
-      (setq  bibtex-autokey-name-separator "-")
-      (setq  bibtex-autokey-name-year-separator "-")
-      (setq  bibtex-autokey-year-title-separator ":")
-      (setq  bibtex-autokey-names 2)
- 
-        (use-package ebib
-          :after tex-mode
-          :init
-          (global-set-key (kbd "C-c e") 'ebib)
-          :bind (
-          :map LaTeX-mode-map
-               ("C-c b" . ebib-insert-citation))
-          :custom
-          (ebib-bib-search-dirs '("home/gebbie/texmf/bibtex/bib/"))
-          (ebib-preload-bib-files '("/home/gebbie/texmf/bibtex/bib/main.bib"))
-          (ebib-use-timestamp t)
-          (ebib-citation-commands '((latex-mode
-                                             (("cite"   "\\cite%<[%A]%>[%A]{%(%K%,)}")
-                                              ("citep"   "\\citep%<[%A]%>[%A]{%(%K%,)}")
-                                              ("citet"   "\\citet%<[%A]%>[%A]{%(%K%,)}")
-                                              ("citeps"   "\\citep{%K}")
-                                              ("citets"   "\\citet{%K}")
-                                              ("apacite"   "\\cite{%K}")
-                                              ("apacitelong"   "\\cite%<<%A>%>[%A]{%(%K%,)}")
-                                              ("apaciteA"   "\\citeA{%K}")
-                                              ("paren" "\\parencite%<[%A]%>[%A]{%(%K%,)}")
-                                              ("foot" "\\footcite%<[%A]%>[%A]{%(%K%,)}")
-                                              ("text" "\\textcite%<[%A]%>[%A]{%(%K%,)}")
-                                              ("smart" "\\smartcite%<[%A]%>[%A]{%(%K%,)}")
-                                              ("super" "\\supercite{%K}")
-                                              ("auto" "\\autocite%<[%A]%>[%A]{%(%K%,)}")
-                                              ("cites2" "\\cites%<(%A)%>(%A)%(%<[%A]%>[%A]{%K}%)")
-                                              ("parens" "\\parencites%<(%A)%>(%A)%(%<[%A]%>[%A]{%K}%)")
-                                              ("foots" "\\footcites%<(%A)%>(%A)%(%<[%A]%>[%A]{%K}%)")
-                                              ("texts" "\\textcites%<(%A)%>(%A)%(%<[%A]%>[%A]{%K}%)")
-                                              ("smarts" "\\smartcites%<(%A)%>(%A)%(%<[%A]%>[%A]{%K}%)")
-                                              ("supers" "\\supercites%<(%A)%>(%A)%(%<[%A]%>[%A]{%K}%)")
-                                              ("autos" "\\autoscites%<(%A)%>(%A)%(%<[%A]%>[%A]{%K}%)")
-                                              ("author" "\\citeauthor%<[%A]%>[%A]{%(%K%,)}")
-                                              ("title" "\\citetitle%<[%A]%>[%A]{%(%K%,)}")
-                                              ("year" "\\citeyear%<[%A]%>[%A][%A]{%K}")
-                                              ("date" "\\citedate%<[%A]%>[%A]{%(%K%,)}")
-                                              ("full" "\\fullcite%<[%A]%>[%A]{%(%K%,)}")))
-                                    (org-mode
-                                     (("ebib" "[[ebib:%K][%D]]")))
-                                    (markdown-mode
-                                     (("text" "@%K%< [%A]%>")
-                                      ("paren" "[%(%<%A %>@%K%<, %A%>%; )]")
-                                      ("year" "[-@%K%< %A%>]")))
-                                    )))
+    (use-package latex
+      :after ebib
+      :ensure auctex
+      :init
+      (setq reftex-plug-into-AUCTeX t)
+      (setq TeX-auto-save t)
+      (setq TeX-parse-self t)
+      (setq-default TeX-master nil)
+      ;; (add-hook 'plain-TeX-mode-hook
+      ;;           (lambda () (set (make-local-variable 'TeX-electric-math)
+      ;;                           (cons "$" "$"))))
+      ;; (add-hook 'LaTeX-mode-hook
+      ;;           (lambda () (set (make-local-variable 'TeX-electric-math)
+      ;;                           (cons "$" "$"))))
+      ;; (add-hook 'LaTeX-mode-hook 'turn-on-auto-fill)
+      :hook ((LaTeX-mode . prettify-symbols-mode)
+             (LaTeX-mode . preview-larger-previews)
+             (LaTeX-mode . my/latex-with-outline)
+             (LaTeX-mode . reftex-mode)
+             )
+      :bind (:map LaTeX-mode-map
+                  ("C-S-e" . latex-math-from-calc)
+                  ("C-c b" . ebib-insert-citation))
+      :config
+      ;; Format math as a Latex string with Calc
+      (defun latex-math-from-calc ()
+        "Evaluate `calc' on the contents of line at point."
+        (interactive)
+        (cond ((region-active-p)
+               (let* ((beg (region-beginning))
+                      (end (region-end))
+                      (string (buffer-substring-no-properties beg end)))
+                 (kill-region beg end)
+                 (insert (calc-eval `(,string calc-language latex
+                                              calc-prefer-frac t
+                                              calc-angle-mode rad)))))
+              (t (let ((l (thing-at-point 'line)))
+                   (end-of-line 1) (kill-line 0) 
+                   (insert (calc-eval `(,l
+                                        calc-language latex
+                                        calc-prefer-frac t
+                                        calc-angle-mode rad)))))))
+      (defun preview-larger-previews ()
+        (setq preview-scale-function
+              (lambda () (* 1.5
+                            (funcall (preview-scale-from-face))))))
+      (defun my/latex-with-outline ()
+        (add-to-list 'minor-mode-overriding-map-alist
+                     `(outline-minor-mode . ,outline-minor-mode-map))
+        (outline-minor-mode 1))
+      )
 
 #+end_src
 
+*** CDLaTeX
+
+by Carsten Dominic, the original author of org-mode
+
+#+begin_src emacs-lisp
+  (use-package cdlatex
+    :ensure t
+    :hook (LaTeX-mode . turn-on-cdlatex)
+    :bind (:map cdlatex-mode-map 
+                ("<tab>" . cdlatex-tab)
+                ("`" . nil)
+                ("'" . nil)
+                ("C-`" . cdlatex-math-symbol)
+                ("C-'" . cdlatex-math-modify)
+                ))
+#+end_src
+
+*** Outline mode
+
+ OUTLINE MODE (built-in), from [[https:github.com/karthink][Karthik]]
+ 
+#+begin_src emacs-lisp
+  (use-package outline
+    :bind (:map outline-minor-mode-map
+                ("TAB" . outline-cycle)
+                ("<tab>" . outline-cycle)
+                ("C-c C-n" . 'outline-next-visible-heading)
+                ("C-c C-p" . 'outline-previous-visible-heading))
+    :config
+    (define-key outline-minor-mode-map (kbd "<backtab>") (lambda () (interactive)
+                                                           (outline-back-to-heading)
+                                                           (outline-cycle)))
+  ;;;###autoload
+    (defun outline-next-line ()
+      "Forward line, but mover over invisible line ends.
+  Essentially a much simplified version of `next-line'."
+      (interactive)
+      (beginning-of-line 2)
+      (while (and (not (eobp))
+                  (get-char-property (1- (point)) 'invisible))
+        (beginning-of-line 2)))
+
+    (defvar outline-cycle-emulate-tab nil
+      "Use tab to indent (when not on a heading) in outline-minor-mode")
+
+    (defun outline-cycle () (interactive)
+           (cond
+            ((save-excursion (beginning-of-line 1) (looking-at outline-regexp))
+             ;; At a heading: rotate between three different views
+             (outline-back-to-heading)
+             (let ((goal-column 0) beg eoh eol eos)
+               ;; First, some boundaries
+               (save-excursion
+                 (outline-back-to-heading)           (setq beg (point))
+                 (save-excursion (outline-next-line) (setq eol (point)))
+                 (outline-end-of-heading)            (setq eoh (point))
+                 (outline-end-of-subtree)            (setq eos (point)))
+               ;; Find out what to do next and set `this-command'
+               (cond
+                ((= eos eoh)
+                 ;; Nothing is hidden behind this heading
+                 (message "EMPTY ENTRY"))
+                ((>= eol eos)
+                 ;; Entire subtree is hidden in one line: open it
+                 (outline-show-entry)
+                 (outline-show-children)
+                 (message "CHILDREN")
+                 (setq this-command 'outline-cycle-children))
+                ((eq last-command 'outline-cycle-children)
+                 ;; We just showed the children, now show everything.
+                 (outline-show-subtree)
+                 (message "SUBTREE"))
+                (t
+                 ;; Default action: hide the subtree.
+                 (outline-hide-subtree)
+                 (message "FOLDED")))))
+
+            ;; TAB emulation
+            (outline-cycle-emulate-tab
+             (call-interactively (key-binding (vector last-input-event)))
+             ;; (indent-according-to-mode)
+             )
+
+            (t
+             ;; Not at a headline: Do whatever this key would do otherwise.
+             ;; (outline-back-to-heading)
+             (let ((normal-binding (let ((outline-minor-mode nil))
+                                     (key-binding (this-command-keys-vector)))))
+               (if normal-binding
+                   (progn
+                     (setq this-command normal-binding)
+                     (call-interactively normal-binding))
+                 (indent-according-to-mode)))))))
+
+#+end_src
+
+*** Auto-activating-snippets
+
+This package implements an engine for auto-expanding snippets. It is done by tracking your inputted chars along a tree until you complete a registered key sequence.
+
+Its like running a long prefix command, but the keys you type are not ‘consumed’ and appear in the buffer until you complete the whole command - and then the snippet is triggered!
+
+#+begin_src emacs-lisp
+  (use-package aas
+    :hook (LaTeX-mode . aas-activate-for-major-mode)
+    :hook (org-mode . aas-activate-for-major-mode))
+    ;;:config
+    ;;(aas-set-snippets 'text-mode
+               ;; expand unconditionally
+    ;;                   ";o-" "ō"
+    ;;                   ";i-" "ī"
+    ;;                   ";a-" "ā"
+    ;;                   ";u-" "ū"
+    ;;                   ";e-" "ē")
+    ;; ;; (aas-set-snippets 'latex-mode
+    ;;                   ;; set condition!
+    ;;                   :cond #'texmathp ; expand only while in math
+    ;;                   "supp" "\\supp"
+    ;;                   ;;"On" "O(n)"
+    ;;                   ;;"O1" "O(1)"
+    ;;                   ;;"Olog" "O(\\log n)"
+    ;;                   ;;"Olon" "O(n \\log n)"
+    ;;                   ;; bind to functions!
+    ;;                   "//" (lambda () (interactive)
+    ;;                          (yas-expand-snippet "\\frac{$1}{$2}$0"))
+    ;;                   "Span" (lambda () (interactive)
+    ;;                            (yas-expand-snippet "\\Span($1)$0")))
+    ;; ;; disable snippets by redefining them with a nil expansion
+    ;; (aas-set-snippets 'latex-mode
+    ;;                   "supp" nil))
+#+end_src
+
+*** LaTeX Auto Activating Snippets
+
+A chunky set of LaTeX snippets for the auto-activating-snippets engine. Would have to look at GitHub to learn more.
+
+#+begin_src emacs-lisp
+  (use-package laas
+    :hook (LaTeX-mode . laas-mode)
+    :config 
+    (setq laas-enable-auto-space nil)
+    (defun my-insert-ensure-math (str)
+      "Insert STR and wrap it in math delimiters if not already in math mode."
+      (let ((delim (if (texmathp) "" "$")))
+        (insert delim str delim)))
+    (aas-set-snippets 'laas-mode
+      "d18o" (lambda () (interactive)
+               (my-insert-ensure-math "\\delta^{18}\\mathrm{O}"))
+      "d13c" (lambda () (interactive)
+               (my-insert-ensure-math "\\delta^{13}\\mathrm{C}"))
+      "d14c" (lambda () (interactive)
+               (my-insert-ensure-math "\\Delta^{14}\\mathrm{C}"))
+      "sf6" (lambda () (interactive)
+               (my-insert-ensure-math "\\mathrm{SF}_6"))
+      "o2" (lambda () (interactive)
+              (my-insert-ensure-math "\\mathrm{O}_2"))
+      "co2" (lambda () (interactive)
+              (my-insert-ensure-math "\\mathrm{CO}_2"))
+      "umolkg" (lambda () (interactive)
+              (my-insert-ensure-math "\\mu \\mathrm{mol}~\\mathrm{kg}^{-1}"))
+      "po4" (lambda () (interactive)
+              (my-insert-ensure-math "\\mathrm{PO}_4^{3-}"))
+      "no3" (lambda () (interactive)
+              (my-insert-ensure-math "\\mathrm{NO}_3^{-}"))
+      "degc" (lambda () (interactive)
+              (my-insert-ensure-math "^{\\circ}\\mathrm{C}"))
+      ;; set condition!
+      :cond #'texmathp ; expand only while in math
+      "supp" "\\supp"
+      "1" nil
+      "Olog" "O(\\log n)"
+      "Olon" "O(n \\log n)"
+      "sr" nil
+      "squ"    "^2"
+      ;; bind to functions!
+      "Sum" (lambda () (interactive)
+              (yas-expand-snippet "\\sum_{$1}^{$2} $0"))
+      "Span" (lambda () (interactive)
+               (yas-expand-snippet "\\Span($1)$0"))
+      ;; add accent snippets
+      :cond #'laas-object-on-left-condition
+      "sqr" (lambda () (interactive) (laas-wrap-previous-object "sqrt"))
+      "tilde" (lambda () (interactive) (laas-wrap-previous-object "tilde"))
+      "'B" (lambda () (interactive) (laas-wrap-previous-object "boldsymbol"))
+      ;; set condition!
+      ;;:cond #'notmathp ; expand outside of math
+      ;;"d18o" "\$\\delta^{18}\\mathrm{O}\$"
+      ;;"d13c" "\$\\delta^{13}\\mathrm{C}\$"
+      ))
+#+end_src
+
+*** YaSnippet settings
+
+abbreviated form for use with auto-activating-snippets
+
+ #+begin_src emacs-lisp
+   (use-package yasnippet
+     :ensure t
+     :hook ((LaTeX-mode . yas-minor-mode)))
+#+end_src
+
+long configuration without auto-activating-snippets below here
+
+#  #+begin_src emacs-lisp
+# ;; Yasnippet settings
+# (use-package yasnippet
+#   :ensure t
+#   :hook ((LaTeX-mode . yas-minor-mode)
+#          (post-self-insert . my/yas-try-expanding-auto-snippets))
+#   :config
+#   (use-package warnings
+#     :config
+#     (cl-pushnew '(yasnippet backquote-change)
+#                 warning-suppress-types
+#                 :test 'equal))
+
+#   (setq yas-triggers-in-field t)
+  
+#   ;; Function that tries to autoexpand YaSnippets
+#   ;; The double quoting is NOT a typo!
+#   (defun my/yas-try-expanding-auto-snippets ()
+#     (when (and (boundp 'yas-minor-mode) yas-minor-mode)
+#       (let ((yas-buffer-local-condition ''(require-snippet-condition . auto)))
+#         (yas-expand)))))
+# #+end_src
+
+*** CDLatex integration with YaSnippet:
+
+Allow cdlatex tab to work inside Yas fields
+
+# #+begin_src emacs-lisp
+#   (use-package cdlatex
+#     :hook ((cdlatex-tab . yas-expand)
+#            (cdlatex-tab . cdlatex-in-yas-field))
+#     :config
+#     (use-package yasnippet
+#       :bind (:map yas-keymap
+#              ("<tab>" . yas-next-field-or-cdlatex)
+#              ("TAB" . yas-next-field-or-cdlatex))
+#       :config
+#       (defun cdlatex-in-yas-field ()
+#         ;; Check if we're at the end of the Yas field
+#         (when-let* ((_ (overlayp yas--active-field-overlay))
+#                     (end (overlay-end yas--active-field-overlay)))
+#           (if (>= (point) end)
+#               ;; Call yas-next-field if cdlatex can't expand here
+#               (let ((s (thing-at-point 'sexp)))
+#                 (unless (and s (assoc (substring-no-properties s)
+#                                       cdlatex-command-alist-comb))
+#                   (yas-next-field-or-maybe-expand)
+#                   t))
+#             ;; otherwise expand and jump to the correct location
+#             (let (cdlatex-tab-hook minp)
+#               (setq minp
+#                     (min (save-excursion (cdlatex-tab)
+#                                          (point))
+#                          (overlay-end yas--active-field-overlay)))
+#               (goto-char minp) t))))
+
+#       (defun yas-next-field-or-cdlatex nil
+#         (interactive)
+#         "Jump to the next Yas field correctly with cdlatex active."
+#         (if
+#             (or (bound-and-true-p cdlatex-mode)
+#                 (bound-and-true-p org-cdlatex-mode))
+#             (cdlatex-tab)
+#           (yas-next-field-or-maybe-expand)))))
+# #+end_src
+
+*** Org-table
+
+Array/tabular input with org-tables and cdlatex
+
+Includes lazytab
+
+Warning: org-table not found emacs 28, it must be built-in
+
+#+begin_src emacs-lisp
+  ;;  (use-package org-table
+  (use-package org  
+      :after cdlatex
+      :bind (:map orgtbl-mode-map
+                  ("<tab>" . lazytab-org-table-next-field-maybe)
+                  ("TAB" . lazytab-org-table-next-field-maybe))
+      :init
+      (add-hook 'cdlatex-tab-hook 'lazytab-cdlatex-or-orgtbl-next-field 90)
+      ;; Tabular environments using cdlatex
+      (add-to-list 'cdlatex-command-alist '("smat" "Insert smallmatrix env"
+                                           "\\left( \\begin{smallmatrix} ? \\end{smallmatrix} \\right)"
+                                           lazytab-position-cursor-and-edit
+                                           nil nil t))
+      (add-to-list 'cdlatex-command-alist '("bmat" "Insert bmatrix env"
+                                           "\\begin{bmatrix} ? \\end{bmatrix}"
+                                           lazytab-position-cursor-and-edit
+                                           nil nil t))
+      (add-to-list 'cdlatex-command-alist '("pmat" "Insert pmatrix env"
+                                           "\\begin{pmatrix} ? \\end{pmatrix}"
+                                           lazytab-position-cursor-and-edit
+                                           nil nil t))
+      (add-to-list 'cdlatex-command-alist '("tbl" "Insert table"
+                                            "\\begin{table}\n\\centering ? \\caption{}\n\\end{table}\n"
+                                           lazytab-position-cursor-and-edit
+                                           nil t nil))
+      :config
+      ;; Tab handling in org tables
+      (defun lazytab-position-cursor-and-edit ()
+        ;; (if (search-backward "\?" (- (point) 100) t)
+        ;;     (delete-char 1))
+        (cdlatex-position-cursor)
+        (lazytab-orgtbl-edit))
+
+      (defun lazytab-orgtbl-edit ()
+        (advice-add 'orgtbl-ctrl-c-ctrl-c :after #'lazytab-orgtbl-replace)
+        (orgtbl-mode 1)
+        (open-line 1)
+        (insert "\n|"))
+
+      (defun lazytab-orgtbl-replace (_)
+        (interactive "P")
+        (unless (org-at-table-p) (user-error "Not at a table"))
+        (let* ((table (org-table-to-lisp))
+               params
+               (replacement-table
+                (if (texmathp)
+                    (lazytab-orgtbl-to-amsmath table params)
+                  (orgtbl-to-latex table params))))
+          (kill-region (org-table-begin) (org-table-end))
+          (open-line 1)
+          (push-mark)
+          (insert replacement-table)
+          (align-regexp (region-beginning) (region-end) "\\([:space:]*\\)& ")
+          (orgtbl-mode -1)
+          (advice-remove 'orgtbl-ctrl-c-ctrl-c #'lazytab-orgtbl-replace)))
+
+      (defun lazytab-orgtbl-to-amsmath (table params)
+        (orgtbl-to-generic
+         table
+         (org-combine-plists
+          '(:splice t
+                    :lstart ""
+                    :lend " \\\\"
+                    :sep " & "
+                    :hline nil
+                    :llend "")
+          params)))
+
+      (defun lazytab-cdlatex-or-orgtbl-next-field ()
+        (when (and (bound-and-true-p orgtbl-mode)
+                   (org-table-p)
+                   (looking-at "[[:space:]]*\\(?:|\\|$\\)")
+                   (let ((s (thing-at-point 'sexp)))
+                     (not (and s (assoc s cdlatex-command-alist-comb)))))
+          (call-interactively #'org-table-next-field)
+          t))
+
+      (defun lazytab-org-table-next-field-maybe ()
+        (interactive)
+        (if (bound-and-true-p cdlatex-mode)
+            (cdlatex-tab)
+          (org-table-next-field))))
+
+#+end_src
+
+** My version of  JWiegly's config [[https://github.com/jwiegley/use-package/issues/379][issue #379 in use-package]]
+
+multi-file document structure, LaTex packages support, in the setq variables
+
+# #+begin_src emacs-lisp :tangle no
+
+#   (use-package tex-mode
+#     :defer t
+#     :ensure auctex                   ; auctex
+#     :mode ("\\.tex\\'" . TeX-latex-mode)
+#     :init
+#     (setq reftex-plug-into-AUCTeX t)
+#     (setq TeX-auto-save t)
+#     (setq TeX-parse-self t)
+#     (setq-default TeX-master nil)
+#     (add-hook 'LaTeX-mode-hook 'reftex-mode)
+#     (add-hook 'plain-TeX-mode-hook
+#               (lambda () (set (make-local-variable 'TeX-electric-math)
+#                               (cons "$" "$"))))
+#     (add-hook 'LaTeX-mode-hook
+#               (lambda () (set (make-local-variable 'TeX-electric-math)
+#                               (cons "$" "$"))))
+#     (add-hook 'LaTeX-mode-hook 'turn-on-auto-fill)
+#     )
+
+#   (setq bibtex-autokey-titleword-length 12)
+#   (setq bibtex-autokey-year-length 4)
+#   (setq  bibtex-autokey-name-case-convert-function 'identity)
+#   (setq  bibtex-autokey-titleword-case-convert-function 'identity)
+#   (setq  bibtex-autokey-titlewords 1)
+#   (setq  bibtex-autokey-titlewords-stretch 0)
+#   (setq  bibtex-autokey-name-separator "-")
+#   (setq  bibtex-autokey-name-year-separator "-")
+#   (setq  bibtex-autokey-year-title-separator ":")
+#   (setq  bibtex-autokey-names 2)
+#+end_src
+
+** Ebib
+
+BibTex management in a standalone program that happens to run in emacs.
+
+#+begin_src emacs-lisp
+  (use-package ebib
+    ;;:after tex-mode
+    :init
+    (global-set-key (kbd "C-c e") 'ebib)
+    ;;:bind (
+    ;;       :map LaTeX-mode-map
+    ;;       ("C-c b" . ebib-insert-citation))
+    :custom
+    (ebib-bib-search-dirs '("~/.config/texmf/bibtex/bib/"))
+    (ebib-preload-bib-files '("~/.config/texmf/bibtex/bib/main.bib"))
+    (ebib-use-timestamp t)
+    (ebib-citation-commands '((latex-mode
+                               (("cite"   "\\cite%<[%A]%>[%A]{%(%K%,)}")
+                                ("citep"   "\\citep%<[%A]%>[%A]{%(%K%,)}")
+                                ("citet"   "\\citet%<[%A]%>[%A]{%(%K%,)}")
+                                ("citeps"   "\\citep{%K}")
+                                ("citets"   "\\citet{%K}")
+                                ("apacite"   "\\cite{%K}")
+                                ("apacitelong"   "\\cite%<<%A>%>[%A]{%(%K%,)}")
+                                ("apaciteA"   "\\citeA{%K}")
+                                ("paren" "\\parencite%<[%A]%>[%A]{%(%K%,)}")
+                                ("foot" "\\footcite%<[%A]%>[%A]{%(%K%,)}")
+                                ("text" "\\textcite%<[%A]%>[%A]{%(%K%,)}")
+                                ("smart" "\\smartcite%<[%A]%>[%A]{%(%K%,)}")
+                                ("super" "\\supercite{%K}")
+                                ("auto" "\\autocite%<[%A]%>[%A]{%(%K%,)}")
+                                ("cites2" "\\cites%<(%A)%>(%A)%(%<[%A]%>[%A]{%K}%)")
+                                ("parens" "\\parencites%<(%A)%>(%A)%(%<[%A]%>[%A]{%K}%)")
+                                ("foots" "\\footcites%<(%A)%>(%A)%(%<[%A]%>[%A]{%K}%)")
+                                ("texts" "\\textcites%<(%A)%>(%A)%(%<[%A]%>[%A]{%K}%)")
+                                ("smarts" "\\smartcites%<(%A)%>(%A)%(%<[%A]%>[%A]{%K}%)")
+                                ("supers" "\\supercites%<(%A)%>(%A)%(%<[%A]%>[%A]{%K}%)")
+                                ("autos" "\\autoscites%<(%A)%>(%A)%(%<[%A]%>[%A]{%K}%)")
+                                ("author" "\\citeauthor%<[%A]%>[%A]{%(%K%,)}")
+                                ("title" "\\citetitle%<[%A]%>[%A]{%(%K%,)}")
+                                ("year" "\\citeyear%<[%A]%>[%A][%A]{%K}")
+                                ("date" "\\citedate%<[%A]%>[%A]{%(%K%,)}")
+                                ("full" "\\fullcite%<[%A]%>[%A]{%(%K%,)}")))
+                              (org-mode
+                               (("ebib" "[[ebib:%K][%D]]")))
+                              (markdown-mode
+                               (("text" "@%K%< [%A]%>")
+                                ("paren" "[%(%<%A %>@%K%<, %A%>%; )]")
+                                ("year" "[-@%K%< %A%>]")))
+                              )))
+
+#+end_src
+
+** Bibliography links to ebib in org-mode
+
+When making links to the bibliography in org-mode, make the link take you to ebib. Requires "loading" org-ebib package that comes with ebib.
+Probably better to move this line to ebib startup. 
+#+begin_src emacs-lisp
+    (with-eval-after-load 'ebib
+      (require 'org-ebib)
+      )
+
+#+end_src
 conflict with C-M-j in ebib entry list (C-M-j is ivy-immediate-done, so it can't be used to switch buffers as defined by daviwil)
 
 ;;#+begin_src emacs-lisp
@@ -1124,243 +2197,79 @@ conflict with C-M-j in ebib entry list (C-M-j is ivy-immediate-done, so it can't
 
 ;;#+end_src
 
-** ebib-biblio linkage
+** ebib-biblio-bibtex linkage
 
 #+begin_src emacs-lisp
 
-     (use-package biblio
-             :after ebib)
+  (use-package biblio
+    :after ebib
+    :config 
+    (setq biblio-bibtex-use-autokey t)
+    (setq bibtex-autokey-titleword-length 12)
+    (setq bibtex-autokey-year-length 4)
+    (setq bibtex-autokey-name-case-convert-function 'identity)
+    (setq bibtex-autokey-titleword-case-convert-function 'identity)
+    (setq bibtex-autokey-titlewords 1)
+    (setq bibtex-autokey-titlewords-stretch 0)
+    (setq bibtex-autokey-name-separator "-")
+    (setq bibtex-autokey-name-year-separator "-")
+    (setq bibtex-autokey-year-title-separator ":")
+    (setq bibtex-autokey-names 2)
 
-   (setq biblio-bibtex-use-autokey t)
+    ;; being polite with CrossRef and getting faster response
+    (setq biblio-crossref-user-email-address "ggebbie@whoi.edu")
 
-  ;; being polite with CrossRef and getting faster response
-  (setq biblio-crossref-user-email-address "ggebbie@whoi.edu")
+    (with-eval-after-load 'ebib
+      (require 'ebib-biblio)
+      (define-key biblio-selection-mode-map (kbd "e") #'ebib-biblio-selection-import)))
 
-     (with-eval-after-load 'ebib
-     (require 'ebib-biblio)
-     (define-key biblio-selection-mode-map (kbd "e") #'ebib-biblio-selection-import))
-
-       ;; Didn't work because ebib-biblio not a repository package
-       ;; straight.el could fix it, but i'm not using it
-       ;;  (use-package ebib-biblio
-         ;;  :after (ebib biblio)
-           ;;:bind (:map biblio-selection-mode-map
-             ;;          ("e" . ebib-biblio-selection-import))
-       ;;    :demand t)
+  ;; Didn't work because ebib-biblio not a repository package
+  ;; straight.el could fix it, but i'm not using it
+  ;;  (use-package ebib-biblio
+  ;;  :after (ebib biblio)
+  ;;:bind (:map biblio-selection-mode-map
+  ;;          ("e" . ebib-biblio-selection-import))
+  ;;    :demand t)
 
 #+end_src
 
-* Email
+* Final things
 
-** inital mu4e setup
+**  Startup in dired mode
 
-Add the initial =mu4e= configuration:
-
-*IMPORTANT NOTE*: As of mu4e 1.3.7, =mu4e-maildir-shortcuts= now has a new format!  Here is the equivalent:
-
+;;; dashboard.el --- A startup screen extracted from Spacemacs
+Dashboard lists some recent projects, agenda items
 #+begin_src emacs-lisp
-
-  (use-package mu4e
-    :ensure nil
-    :load-path "/usr/share/emacs/site-lisp/mu4e/"
-    :defer 20 ; Wait until 20 seconds after startup
+  (use-package dashboard
+    :ensure t
     :config
+    (dashboard-setup-startup-hook)
 
-    ;; craft an email workflow in org mode
-    (require 'mu4e-org)
-
-    ;; This is set to 't' to avoid mail syncing issues when using mbsync
-    (setq mu4e-change-filenames-when-moving t)
-
-    ;; Refresh mail using isync every 10 minutes
-    (setq mu4e-update-interval (* 10 60))
-    (setq mu4e-get-mail-command "/usr/bin/mbsync -a")
-    (setq mu4e-maildir "~/Mail")
-    ;; Make sure plain text mails flow correctly for recipients
-    (setq mu4e-compose-format-flowed t)
-
-    ;; gg added this one
-    (setq mu4e-compose-dont-reply-to-self t)
-  
-    (setq mu4e-contexts
-          (list
-           ;; Work account
-           (make-mu4e-context
-            :name "personal"
-            :match-func
-            (lambda (msg)
-              (when msg
-                (string-prefix-p "/personal" (mu4e-message-field msg :maildir))))
-            :vars '((user-mail-address . "gebbie@gmail.edu")
-                    (user-full-name    . "Jake")
-                    (smtpmail-smtp-server  . "smtp.gmail.com")
-                    (smtpmail-smtp-service . 465)
-                    (smtpmail-stream-type  . ssl)
-                    (mu4e-drafts-folder  . "/Gmail/[Gmail]/Drafts")
-                    (mu4e-sent-folder  . "/Gmail/[Gmail]/Sent Mail")
-                    (mu4e-refile-folder  . "/Gmail/[Gmail]/All Mail")
-                    (mu4e-trash-folder  . "/Gmail/[Gmail]/Trash")))
-           (make-mu4e-context
-            :name "jgebbie"
-            :match-func
-            (lambda (msg)
-              (when msg
-                (string-prefix-p "/jgebbie" (mu4e-message-field msg :maildir))))
-            :vars '((user-mail-address . "jgebbie@whoi.edu")
-                    (user-full-name    . "Jake Gebbie")
-                    (smtpmail-smtp-server  . "smtp.gmail.com")
-                    (smtpmail-smtp-service . 465)
-                    (smtpmail-stream-type  . ssl)
-                    (mu4e-drafts-folder  . "/Gmail/[Gmail]/Drafts")
-                    (mu4e-sent-folder  . "/Gmail/[Gmail]/Sent Mail")
-                    (mu4e-refile-folder  . "/Gmail/[Gmail]/All Mail")
-                    (mu4e-trash-folder  . "/Gmail/[Gmail]/Trash")))
-           (make-mu4e-context
-            :name "ggebbie"
-            :match-func
-            (lambda (msg)
-              (when msg
-                (string-prefix-p "/ggebbie" (mu4e-message-field msg :maildir))))
-            :vars '((user-mail-address . "ggebbie@whoi.edu")
-                    (user-full-name    . "G Jake Gebbie")
-                    (smtpmail-smtp-server  . "smtp.gmail.com")
-                    (smtpmail-smtp-service . 465)
-                    (smtpmail-stream-type  . ssl)
-                    (mu4e-drafts-folder  . "/Gmail/[Gmail]/Drafts")
-                    (mu4e-sent-folder  . "/Gmail/[Gmail]/Sent Mail")
-                    (mu4e-refile-folder  . "/Gmail/[Gmail]/All Mail")
-                    (mu4e-trash-folder  . "/Gmail/[Gmail]/Trash")))
-           ))
-
-    (defun runemacs/capture-mail-follow-up (msg)
-      (interactive)
-      (call-interactively 'org-store-link)
-      (org-capture nil "mf"))
-
-    (defun runemacs/capture-mail-read-later (msg)
-      (interactive)
-      (call-interactively 'org-store-link)
-      (org-capture nil "mr"))
-
-    ;; Add custom actions for our capture templates
-    (add-to-list 'mu4e-headers-actions
-                 '("follow up" . runemacs/capture-mail-follow-up) t)
-    (add-to-list 'mu4e-view-actions
-                 '("follow up" . runemacs/capture-mail-follow-up) t)
-    (add-to-list 'mu4e-headers-actions
-                 '("read later" . runemacs/capture-mail-read-later) t)
-    (add-to-list 'mu4e-view-actions
-                 '("read later" . runemacs/capture-mail-read-later) t)
-
-    (setq mu4e-maildir-shortcuts
-          '((:maildir "/Gmail/Inbox"    :key ?i)
-            (:maildir "/Gmail/[Gmail]/Sent Mail" :key ?s)
-            (:maildir "/Gmail/[Gmail]/Trash"     :key ?t)
-            (:maildir "/Gmail/[Gmail]/Drafts"    :key ?d)
-            (:maildir "/Gmail/[Gmail]/All Mail"  :key ?a)))
-
-    (setq mu4e-bookmarks
-          '((:name "Unread messages" :query "flag:unread AND NOT flag:trashed" :key ?i)
-            (:name "Today's messages" :query "date:today..now" :key ?t)
-            (:name "Last 7 days" :query "date:7d..now" :hide-unread t :key ?w)
-            (:name "Messages with images" :query "mime:image/*" :key ?p)
-            (:name "ocean" :query "to:ggebbie@whoi.edu OR to:jgebbie@whoi.edu" :key ?o)
-            (:name "gmail" :query "to:gebbie@gmail.com" :key ?g)))
-
-    ;; Run mu4e in background to sync mail 
-    (mu4e t))
-
+    (setq dashboard-startup-banner 'logo)
+    (setq initial-buffer-choice (lambda () (get-buffer "*dashboard*")))
+    (setq dashboard-filter-agenda-entry 'dashboard-no-filter-agenda)
+    (setq dashboard-set-footer nil))
 #+end_src
 
-More Gmail configuration tips: https://www.djcbsoftware.nl/code/mu/mu4e/Gmail-configuration.html
+Or, use a basic starting screen, the home file directory. 
+# #+begin_src emacs-lisp
+#   (dired "~")
+# #+end_src
 
-** Multiple email accounts
-
-** Configuring SMTP
-
-SMTP is [[https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol][Simple Mail Transfer Protocol]], an old standard for connecting to a server to send email.
-
-Traditionally, SMTP servers run on port 25 without any kind of encryption.  These days, most will either use SSL or TLS, either of which may use different ports.
-
-- =smtpmail-smtp-server= - The host where we connect to send mail
-- =smtpmail-smtp-service= - The port number of the SMTP service (defaults to 25)
-- =smtpmail-stream-type= - Determines whether SSL or TLS should be used when connecting
-
-  
-** Configure the mail-sending function
-
-So that we don't get prompted about how mail should be sent, we will configure the =message-send-mail-function= variable to automatically call =smtpmail-send-it=:
+** Last but not least, emoji
 
 #+begin_src emacs-lisp
-
-    ;; Configure the function to use for sending mail
-    (setq message-send-mail-function 'smtpmail-send-it)
-
+(use-package emojify
+  :config
+  (when (member "Segoe UI Emoji" (font-family-list))
+    (set-fontset-font
+     t 'symbol (font-spec :family "Segoe UI Emoji") nil 'prepend))
+  (setq emojify-display-style 'unicode)
+  (setq emojify-emoji-styles '(unicode)))
 #+end_src
 
-
-** Sending HTML mail with org-mime
-
-We can use the [[https://github.com/org-mime/org-mime][org-mime]] package for this purpose:
+** Actually last, pass
 
 #+begin_src emacs-lisp
-
-  (use-package org-mime
-    :ensure t)
-
+(use-package pass)
 #+end_src
-
-
-** Customizing the HTML export style
-
-As you might have noticed, the exported e-mail has section numbers for headings.  We can turn that off!
-
-We can also customize the styling of individual HTML elements inside of the message using =org-mime-html-hook=.  Here's an example of making all code blocks have a dark background and light text:
-
-You can easily add a hook to do this conversion for you automatically:
-Alternatively if you just want be reminded when you didn't use HTML, use =org-mime-confirm-when-no-multipart=:
-
-#+begin_src emacs-lisp
-
-  (setq org-mime-export-options '(:section-numbers nil
-                                  :with-author nil
-                                  :with-toc nil))
-
-  (add-hook 'org-mime-html-hook
-            (lambda ()
-              (org-mime-change-element-style
-              "pre" (format "color: %s; background-color: %s; padding: 0.5em;"
-                            "#E6E1DC" "#232323"))))
-
-
-  (add-hook 'message-send-hook 'org-mime-confirm-when-no-multipart)
-
-#+end_src
-
-** send HTML email with org-msg
-
-#+begin_src emacs-lisp
-
-      ;; (delete 'mu4e evil-collection-mode-list)
-      ;; (delete 'mu4e-conversation evil-collection-mode-list)
-
-  (use-package org-msg
-    :after mu4e
-    :config
-    (setq mail-user-agent 'mu4e-user-agent)
-    (org-msg-mode)
-    (setq org-msg-recipient-names '(("jgebbie@whoi.edu"  . "Jake Gebbie"))
-    org-msg-greeting-name-limit 3
-    org-msg-default-alternatives '((new . (text html))
-                                   (reply-to-html	. (text html))
-                                   (reply-to-text	. (text)))
-    org-msg-convert-citation t))
-
-#+end_src
-
-** Startup in dired mode
-
-#+begin_src emacs-lisp
-  (dired "~")
-#+end_src
-
